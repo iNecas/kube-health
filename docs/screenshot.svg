@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="terminal"
+   viewBox="0 0 600 291"
+   width="600"
+   version="1.1"
+   sodipodi:docname="termtosvg_00002.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+  <sodipodi:namedview
+     id="namedview49"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.81099656"
+     inkscape:cx="299.63136"
+     inkscape:cy="145.5"
+     inkscape:window-width="2254"
+     inkscape:window-height="1213"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="screen" />
+  <defs
+     id="defs1">
+    <termtosvg:template_settings>
+      <termtosvg:screen_geometry
+         columns="75"
+         rows="17" />
+      <termtosvg:animation
+         type="css" />
+    </termtosvg:template_settings>
+    <style
+       type="text/css"
+       id="generated-style"><![CDATA[#screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+    ]]></style>
+    <style
+       type="text/css"
+       id="user-style">
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               gjm8 color theme (source: https://terminal.sexy/) */
+            .foreground {fill: #c5c5c5;}
+            .background {fill: #1c1c1c;}
+            .color0 {fill: #1c1c1c;}
+            .color1 {fill: #ff005b;}
+            .color2 {fill: #cee318;}
+            .color3 {fill: #ffe755;}
+            .color4 {fill: #048ac7;}
+            .color5 {fill: #833c9f;}
+            .color6 {fill: #0ac1cd;}
+            .color7 {fill: #e5e5e5;}
+            .color8 {fill: #1c1c1c;}
+            .color9 {fill: #ff005b;}
+            .color10 {fill: #cee318;}
+            .color11 {fill: #ffe755;}
+            .color12 {fill: #048ac7;}
+            .color13 {fill: #833c9f;}
+            .color14 {fill: #0ac1cd;}
+            .color15 {fill: #e5e5e5;}
+        </style>
+  </defs>
+  <svg
+     id="screen"
+     width="600"
+     height="289"
+     viewBox="0 0 600 289"
+     preserveAspectRatio="xMidYMin slice"
+     version="1.1">
+    <rect
+       class="background"
+       height="100%"
+       width="100%"
+       x="0"
+       y="0"
+       id="rect1" />
+    <defs
+       id="defs33">
+      <g
+         id="g1">
+        <text
+           x="0"
+           textLength="320"
+           class="foreground"
+           id="text1">❯ kube-health DaemonSet/node-exporter</text>
+      </g>
+      <g
+         id="g2">
+        <text
+           x="0"
+           textLength="496"
+           class="foreground"
+           id="text2">OBJECT           CONDITION                       AGE    REASON</text>
+      </g>
+      <g
+         id="g3">
+        <text
+           x="0"
+           textLength="88"
+           class="color3"
+           id="text3">Progressing</text>
+        <text
+           x="88"
+           textLength="256"
+           class="foreground"
+           id="text4"> default/DaemonSet/node-exporter</text>
+      </g>
+      <g
+         id="g4">
+        <text
+           x="0"
+           textLength="24"
+           class="foreground"
+           id="text5">└─ </text>
+        <text
+           x="24"
+           textLength="88"
+           class="color3"
+           id="text6">Progressing</text>
+        <text
+           x="112"
+           textLength="192"
+           class="foreground"
+           id="text7"> Pod/node-exporter-fvlnb</text>
+      </g>
+      <g
+         id="g5">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text8">   │             </text>
+        <text
+           x="136"
+           textLength="200"
+           class="color2"
+           id="text9">PodReadyToStartContainers</text>
+        <text
+           x="336"
+           textLength="112"
+           class="foreground"
+           id="text10">       3h     </text>
+      </g>
+      <g
+         id="g6">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text11">   │             </text>
+        <text
+           x="136"
+           textLength="88"
+           class="color2"
+           id="text12">Initialized</text>
+        <text
+           x="224"
+           textLength="224"
+           class="foreground"
+           id="text13">                     3h     </text>
+      </g>
+      <g
+         id="g7">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text14">   │             </text>
+        <text
+           x="136"
+           textLength="40"
+           class="color1"
+           id="text15">Ready</text>
+        <text
+           x="176"
+           textLength="416"
+           class="foreground"
+           id="text16">                           3h     ContainersNotReady</text>
+      </g>
+      <g
+         id="g8">
+        <text
+           x="0"
+           textLength="528"
+           class="foreground"
+           id="text17">   │               containers with unready status: [node-exporter]</text>
+      </g>
+      <g
+         id="g9">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text18">   │             </text>
+        <text
+           x="136"
+           textLength="120"
+           class="color1"
+           id="text19">ContainersReady</text>
+        <text
+           x="256"
+           textLength="336"
+           class="foreground"
+           id="text20">                 3h     ContainersNotReady</text>
+      </g>
+      <g
+         id="g10">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text21">   │             </text>
+        <text
+           x="136"
+           textLength="96"
+           class="color2"
+           id="text22">PodScheduled</text>
+        <text
+           x="232"
+           textLength="216"
+           class="foreground"
+           id="text23">                    3h     </text>
+      </g>
+      <g
+         id="g11">
+        <text
+           x="0"
+           textLength="48"
+           class="foreground"
+           id="text24">   └─ </text>
+        <text
+           x="48"
+           textLength="88"
+           class="color3"
+           id="text25">Progressing</text>
+        <text
+           x="136"
+           textLength="192"
+           class="foreground"
+           id="text26"> Container/node-exporter</text>
+      </g>
+      <g
+         id="g12">
+        <text
+           x="0"
+           textLength="136"
+           class="foreground"
+           id="text27" />
+        <text
+           x="136"
+           textLength="56"
+           class="color3"
+           id="text28">Waiting</text>
+        <text
+           x="192"
+           textLength="384"
+           class="foreground"
+           id="text29">                         35s    CrashLoopBackOff</text>
+      </g>
+      <g
+         id="g13">
+        <text
+           x="0"
+           textLength="192"
+           class="foreground"
+           id="text30">                   Logs:</text>
+      </g>
+      <g
+         id="g14">
+        <text
+           x="0"
+           textLength="464"
+           class="foreground"
+           id="text31">                   node_exporter: error: unknown long flag</text>
+      </g>
+      <g
+         id="g15">
+        <text
+           x="0"
+           textLength="440"
+           class="foreground"
+           id="text32">                       '--no-collector.wii', try --help</text>
+      </g>
+      <g
+         id="g16">
+        <text
+           x="0"
+           textLength="8"
+           class="background"
+           id="text33" />
+      </g>
+    </defs>
+    <g
+       id="g49">
+      <use
+         xlink:href="#g1"
+         y="0"
+         id="use33" />
+      <use
+         xlink:href="#g2"
+         y="17"
+         id="use34" />
+      <use
+         xlink:href="#g3"
+         y="34"
+         id="use35" />
+      <use
+         xlink:href="#g4"
+         y="51"
+         id="use36" />
+      <use
+         xlink:href="#g5"
+         y="68"
+         id="use37" />
+      <use
+         xlink:href="#g6"
+         y="85"
+         id="use38" />
+      <use
+         xlink:href="#g7"
+         y="102"
+         id="use39" />
+      <use
+         xlink:href="#g8"
+         y="119"
+         id="use40" />
+      <use
+         xlink:href="#g9"
+         y="136"
+         id="use41" />
+      <use
+         xlink:href="#g8"
+         y="153"
+         id="use42" />
+      <use
+         xlink:href="#g10"
+         y="170"
+         id="use43" />
+      <use
+         xlink:href="#g11"
+         y="187"
+         id="use44" />
+      <use
+         xlink:href="#g12"
+         y="204"
+         id="use45" />
+      <use
+         xlink:href="#g13"
+         y="221"
+         id="use46" />
+      <use
+         xlink:href="#g14"
+         y="238"
+         id="use47" />
+      <use
+         xlink:href="#g15"
+         y="255"
+         id="use48" />
+      <use
+         xlink:href="#g16"
+         y="272"
+         id="use49" />
+    </g>
+  </svg>
+</svg>

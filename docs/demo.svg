@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 600 342" width="600" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="75" rows="20"/>
+            <termtosvg:animation type="css"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style"><![CDATA[#screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+
+            :root {
+                --animation-duration: 7027ms;
+            }
+
+            @keyframes roll {
+                0.000%{transform:translateY(0px)}
+13.349%{transform:translateY(-374px)}
+42.408%{transform:translateY(-748px)}
+42.479%{transform:translateY(-1122px)}
+71.453%{transform:translateY(-1496px)}
+71.538%{transform:translateY(-1870px)}
+100.000%{transform:translateY(-1870px)}
+            }
+
+            #screen_view {
+                animation-duration: 7027ms;
+                animation-iteration-count:infinite;
+                animation-name:roll;
+                animation-timing-function: steps(1,end);
+                animation-fill-mode: forwards;
+            }
+        ]]></style>
+        <style type="text/css" id="user-style">
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               gjm8 color theme (source: https://terminal.sexy/) */
+            .foreground {fill: #c5c5c5;}
+            .background {fill: #1c1c1c;}
+            .color0 {fill: #1c1c1c;}
+            .color1 {fill: #ff005b;}
+            .color2 {fill: #cee318;}
+            .color3 {fill: #ffe755;}
+            .color4 {fill: #048ac7;}
+            .color5 {fill: #833c9f;}
+            .color6 {fill: #0ac1cd;}
+            .color7 {fill: #e5e5e5;}
+            .color8 {fill: #1c1c1c;}
+            .color9 {fill: #ff005b;}
+            .color10 {fill: #cee318;}
+            .color11 {fill: #ffe755;}
+            .color12 {fill: #048ac7;}
+            .color13 {fill: #833c9f;}
+            .color14 {fill: #0ac1cd;}
+            .color15 {fill: #e5e5e5;}
+        </style>
+    </defs>
+    <svg id="screen" width="600" height="340" viewBox="0 0 600 340" preserveAspectRatio="xMidYMin slice"><rect class="background" height="100%" width="100%" x="0" y="0"/><defs><g id="g1"><text x="0" textLength="536" class="foreground">&#10095; kubectl apply -f daemonset_fix.yaml -o=yaml | kube-health - -W</text></g><g id="g2"><text x="0" textLength="8" class="background"> </text></g><g id="g3"><text x="0" textLength="496" class="foreground">OBJECT           CONDITION                       AGE    REASON</text></g><g id="g4"><text x="0" textLength="88" class="color3">Progressing</text><text x="88" textLength="256" class="foreground"> default/DaemonSet/node-exporter</text></g><g id="g5"><text x="0" textLength="136" class="foreground">&#9474;                </text><text x="136" textLength="144" class="color3">ObservedGeneration</text><text x="280" textLength="232" class="foreground">                     Outdated</text></g><g id="g6"><text x="0" textLength="584" class="foreground">&#9474;                  Observed generation 44 is less than desired generation</text></g><g id="g7"><text x="0" textLength="208" class="foreground">&#9474;                       45</text></g><g id="g8"><text x="0" textLength="24" class="foreground">&#9492;&#9472; </text><text x="24" textLength="88" class="color3">Progressing</text><text x="112" textLength="192" class="foreground"> Pod/node-exporter-f7p9l</text></g><g id="g9"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="200" class="color2">PodReadyToStartContainers</text><text x="336" textLength="112" class="foreground">       4s     </text></g><g id="g10"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="88" class="color2">Initialized</text><text x="224" textLength="224" class="foreground">                     7s     </text></g><g id="g11"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="40" class="color1">Ready</text><text x="176" textLength="416" class="foreground">                           7s     ContainersNotReady</text></g><g id="g12"><text x="0" textLength="528" class="foreground">   &#9474;               containers with unready status: [node-exporter]</text></g><g id="g13"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="120" class="color1">ContainersReady</text><text x="256" textLength="336" class="foreground">                 7s     ContainersNotReady</text></g><g id="g14"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="96" class="color2">PodScheduled</text><text x="232" textLength="216" class="foreground">                    7s     </text></g><g id="g15"><text x="0" textLength="48" class="foreground">   &#9492;&#9472; </text><text x="48" textLength="88" class="color3">Progressing</text><text x="136" textLength="192" class="foreground"> Container/node-exporter</text></g><g id="g16"><text x="0" textLength="136" class="foreground">                 </text><text x="136" textLength="56" class="color3">Waiting</text><text x="192" textLength="384" class="foreground">                         3s     CrashLoopBackOff</text></g><g id="g17"><text x="0" textLength="192" class="foreground">                   Logs:</text></g><g id="g18"><text x="0" textLength="464" class="foreground">                   node_exporter: error: unknown long flag</text></g><g id="g19"><text x="0" textLength="440" class="foreground">                       '--no-collector.wii', try --help</text></g><g id="g20"><text x="0" textLength="8" class="background"> </text><text x="8" textLength="592" class="foreground">                                                                          </text></g><g id="g21"><text x="0" textLength="600" class="foreground">                                                                           </text></g><g id="g22"><text x="0" textLength="600" class="foreground">OBJECT           CONDITION                       AGE    REASON             </text></g><g id="g23"><text x="0" textLength="88" class="color3">Progressing</text><text x="88" textLength="512" class="foreground"> default/DaemonSet/node-exporter                                </text></g><g id="g24"><text x="0" textLength="24" class="foreground">&#9492;&#9472; </text><text x="24" textLength="88" class="color3">Progressing</text><text x="112" textLength="488" class="foreground"> Pod/node-exporter-68qkl                                     </text></g><g id="g25"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="200" class="color1">PodReadyToStartContainers</text><text x="336" textLength="264" class="foreground">       2s                        </text></g><g id="g26"><text x="0" textLength="600" class="foreground">   &#9474;                                                                       </text></g><g id="g27"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="88" class="color2">Initialized</text><text x="224" textLength="376" class="foreground">                     2s                        </text></g><g id="g28"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="40" class="color1">Ready</text><text x="176" textLength="424" class="foreground">                           2s     ContainersNotReady </text></g><g id="g29"><text x="0" textLength="600" class="foreground">   &#9474;               containers with unready status: [node-exporter]         </text></g><g id="g30"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="120" class="color1">ContainersReady</text><text x="256" textLength="344" class="foreground">                 2s     ContainersNotReady </text></g><g id="g31"><text x="0" textLength="136" class="foreground">   &#9474;             </text><text x="136" textLength="96" class="color2">PodScheduled</text><text x="232" textLength="368" class="foreground">                    2s                        </text></g><g id="g32"><text x="0" textLength="48" class="foreground">   &#9492;&#9472; </text><text x="48" textLength="88" class="color3">Progressing</text><text x="136" textLength="464" class="foreground"> Container/node-exporter                                  </text></g><g id="g33"><text x="0" textLength="136" class="foreground">                 </text><text x="136" textLength="56" class="color3">Waiting</text><text x="192" textLength="408" class="foreground">                                ContainerCreating  </text></g><g id="g34"><text x="0" textLength="16" class="color2">Ok</text><text x="16" textLength="584" class="foreground"> default/DaemonSet/node-exporter                                         </text></g></defs><g id="screen_view"><g><use xlink:href="#g1" y="0"/><rect x="0" y="17" width="8" height="17" class="foreground"/><use xlink:href="#g2" y="17"/></g><g><use xlink:href="#g1" y="374"/><use xlink:href="#g3" y="391"/><use xlink:href="#g4" y="408"/><use xlink:href="#g5" y="425"/><use xlink:href="#g6" y="442"/><use xlink:href="#g7" y="459"/><use xlink:href="#g8" y="476"/><use xlink:href="#g9" y="493"/><use xlink:href="#g10" y="510"/><use xlink:href="#g11" y="527"/><use xlink:href="#g12" y="544"/><use xlink:href="#g13" y="561"/><use xlink:href="#g12" y="578"/><use xlink:href="#g14" y="595"/><use xlink:href="#g15" y="612"/><use xlink:href="#g16" y="629"/><use xlink:href="#g17" y="646"/><use xlink:href="#g18" y="663"/><use xlink:href="#g19" y="680"/><rect x="0" y="697" width="8" height="17" class="foreground"/><use xlink:href="#g2" y="697"/></g><g><use xlink:href="#g1" y="748"/><rect x="0" y="765" width="8" height="17" class="foreground"/><use xlink:href="#g20" y="765"/><use xlink:href="#g21" y="782"/><use xlink:href="#g21" y="799"/><use xlink:href="#g21" y="816"/><use xlink:href="#g21" y="833"/><use xlink:href="#g21" y="850"/><use xlink:href="#g21" y="867"/><use xlink:href="#g21" y="884"/><use xlink:href="#g21" y="901"/><use xlink:href="#g21" y="918"/><use xlink:href="#g21" y="935"/><use xlink:href="#g21" y="952"/><use xlink:href="#g21" y="969"/><use xlink:href="#g21" y="986"/><use xlink:href="#g21" y="1003"/><use xlink:href="#g21" y="1020"/><use xlink:href="#g21" y="1037"/><use xlink:href="#g21" y="1054"/></g><g><use xlink:href="#g1" y="1122"/><use xlink:href="#g22" y="1139"/><use xlink:href="#g23" y="1156"/><use xlink:href="#g24" y="1173"/><use xlink:href="#g25" y="1190"/><use xlink:href="#g26" y="1207"/><use xlink:href="#g27" y="1224"/><use xlink:href="#g28" y="1241"/><use xlink:href="#g29" y="1258"/><use xlink:href="#g30" y="1275"/><use xlink:href="#g29" y="1292"/><use xlink:href="#g31" y="1309"/><use xlink:href="#g32" y="1326"/><use xlink:href="#g33" y="1343"/><use xlink:href="#g21" y="1360"/><rect x="0" y="1377" width="8" height="17" class="foreground"/><use xlink:href="#g20" y="1377"/><use xlink:href="#g21" y="1394"/><use xlink:href="#g21" y="1411"/><use xlink:href="#g21" y="1428"/></g><g><use xlink:href="#g1" y="1496"/><rect x="0" y="1513" width="8" height="17" class="foreground"/><use xlink:href="#g20" y="1513"/><use xlink:href="#g21" y="1530"/><use xlink:href="#g21" y="1547"/><use xlink:href="#g21" y="1564"/><use xlink:href="#g21" y="1581"/><use xlink:href="#g21" y="1598"/><use xlink:href="#g21" y="1615"/><use xlink:href="#g21" y="1632"/><use xlink:href="#g21" y="1649"/><use xlink:href="#g21" y="1666"/><use xlink:href="#g21" y="1683"/><use xlink:href="#g21" y="1700"/><use xlink:href="#g21" y="1717"/><use xlink:href="#g21" y="1734"/><use xlink:href="#g21" y="1751"/><use xlink:href="#g21" y="1768"/><use xlink:href="#g21" y="1785"/><use xlink:href="#g21" y="1802"/></g><g><use xlink:href="#g1" y="1870"/><use xlink:href="#g22" y="1887"/><use xlink:href="#g34" y="1904"/><rect x="0" y="1921" width="8" height="17" class="foreground"/><use xlink:href="#g20" y="1921"/><use xlink:href="#g21" y="1938"/><use xlink:href="#g21" y="1955"/><use xlink:href="#g21" y="1972"/><use xlink:href="#g21" y="1989"/><use xlink:href="#g21" y="2006"/><use xlink:href="#g21" y="2023"/><use xlink:href="#g21" y="2040"/><use xlink:href="#g21" y="2057"/><use xlink:href="#g21" y="2074"/><use xlink:href="#g21" y="2091"/><use xlink:href="#g21" y="2108"/><use xlink:href="#g21" y="2125"/><use xlink:href="#g21" y="2142"/><use xlink:href="#g21" y="2159"/><use xlink:href="#g21" y="2176"/></g></g></svg>
+</svg>
