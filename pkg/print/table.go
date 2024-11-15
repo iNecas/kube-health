@@ -109,10 +109,11 @@ var (
 
 func formatConditionType(cond status.ConditionStatus) string {
 	color, setColor := statusColor(cond.Status())
-	if !setColor {
-		color = GREEN
+	if setColor {
+		return SprintfWithColor(color, cond.Type)
+	} else {
+		return cond.Type
 	}
-	return SprintfWithColor(color, cond.Type)
 }
 
 func formatStatus(obj status.ObjectStatus) string {
@@ -133,7 +134,7 @@ func statusColor(s status.Status) (Color, bool) {
 	switch s.Result {
 	case status.Ok:
 		return GREEN, true
-	case status.Warning, status.Unknown:
+	case status.Warning:
 		return YELLOW, true
 	case status.Error:
 		return RED, true
