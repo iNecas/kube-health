@@ -1,7 +1,8 @@
 package analyze
 
 import (
-	"slices"
+	"regexp"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,7 +11,8 @@ import (
 	"github.com/inecas/kube-health/pkg/status"
 )
 
-// ignoredGroupKinds is a list of GroupKinds that are ignored by the default.
+// ignoredGroupKinds is a list of GroupKinds that are ignored by the default
+// when evaluating sub-objects.
 // These are mostly resources that are not interesting for the status evaluation.
 var ignoredGroupKinds = []schema.GroupKind{
 	{Kind: "ConfigMap"},
@@ -21,44 +23,39 @@ var ignoredGroupKinds = []schema.GroupKind{
 	{Kind: "EndpointSlice", Group: "discovery.k8s.io"},
 	{Kind: "Service", Group: ""},
 	{Kind: "ControllerRevision", Group: "apps"},
-	{Kind: "Log", Group: "kube-health.io"},
 }
 
-type ReadyConditionAnalyzer struct{}
-
-func (a ReadyConditionAnalyzer) Analyze(cond *metav1.Condition) status.ConditionStatus {
-	if cond.Type != "Ready" {
-		return ConditionStatusNoMatch
-	}
-	res := status.Unknown
-	switch cond.Status {
-	case metav1.ConditionTrue:
-		res = status.Ok
-	case metav1.ConditionFalse:
-		res = status.Error
-	}
-	return status.ConditionStatus{
-		Condition: cond,
-		CondStatus: &status.Status{
-			Result: res,
-		},
-	}
+type Matcher interface {
+	Match(string) bool
 }
 
-type ProgressingConditionAnalyzer struct{}
+type StringMatcher string
 
-func (a ProgressingConditionAnalyzer) Analyze(cond *metav1.Condition) status.ConditionStatus {
-	if cond.Type != "Progressing" {
-		return ConditionStatusNoMatch
+func NewStringMatchers(patterns ...string) []Matcher {
+	matchers := make([]Matcher, len(patterns))
+	for i, pattern := range patterns {
+		matchers[i] = StringMatcher(pattern)
 	}
-	if cond.Status == metav1.ConditionTrue {
-		return ConditionStatusProgressing(cond)
-	} else {
-		// We can't tell much if the false condition means problem or not:
-		// need to rely on other conditions to fail, so we part the progressing
-		// condition itself as OK.
-		return ConditionStatusOk(cond)
+	return matchers
+}
+
+func (m StringMatcher) Match(s string) bool {
+	return strings.ToLower(string(m)) == strings.ToLower(s)
+}
+
+type RegexpMatcher regexp.Regexp
+
+func (m *RegexpMatcher) Match(s string) bool {
+	r := (*regexp.Regexp)(m)
+	return len(r.FindStringSubmatch(s)) > 0
+}
+
+func NewRegexpMatchers(patterns ...string) []Matcher {
+	matchers := make([]Matcher, len(patterns))
+	for i, pattern := range patterns {
+		matchers[i] = (*RegexpMatcher)(regexp.MustCompile("(?i)" + pattern))
 	}
+	return matchers
 }
 
 // GenericConditionAnalyzer is a generic condition analyzer that can be used
@@ -68,37 +65,99 @@ func (a ProgressingConditionAnalyzer) Analyze(cond *metav1.Condition) status.Con
 // by default, True is considered OK and False is considered Error. The ReversedPolarityTypes
 // is used for conditions that should be treated the other way around:
 // False is OK, True is Error, e.g. Degraded.
+//
+// By default, when a condition is matched and the value is in unexpected state,
+// it's considered as Error, unless the condition is matched by `WarningConditions`,
+// `UnknownConditions` or `ProgressingConditions`, in which case the corresponding
+// status is set.
 type GenericConditionAnalyzer struct {
-	MatchAll              bool
-	Types                 []string
-	ReversedPolarityTypes []string
+	MatchAll                   bool
+	Conditions                 []Matcher
+	ReversedPolarityConditions []Matcher
+	WarningConditions          []Matcher
+	ProgressingConditions      []Matcher
+	UnknownConditions          []Matcher
+}
+
+func (a GenericConditionAnalyzer) match(condType string) (match, reverse, progressing bool, result status.Result) {
+	match = false
+	result = status.Unknown
+	progressing = false
+
+	if a.MatchAll {
+		match = true
+	}
+
+	for _, t := range a.Conditions {
+		if t.Match(condType) {
+			match = true
+			result = status.Error
+			break
+		}
+	}
+
+	for _, t := range a.ReversedPolarityConditions {
+		if t.Match(condType) {
+			match = true
+			reverse = true
+			// Assigning Error by default, can be further overridden by matchers below.
+			result = status.Error
+			break
+		}
+	}
+
+	for _, t := range a.ProgressingConditions {
+		if t.Match(condType) {
+			match = true
+			progressing = true
+			result = status.Unknown
+			break
+		}
+	}
+
+	for _, t := range a.WarningConditions {
+		if t.Match(condType) {
+			match = true
+			result = status.Warning
+			break
+		}
+	}
+
+	for _, t := range a.UnknownConditions {
+		if t.Match(condType) {
+			match = true
+			result = status.Unknown
+			break
+		}
+	}
+
+	return match, reverse, progressing, result
 }
 
 func (a GenericConditionAnalyzer) Analyze(cond *metav1.Condition) status.ConditionStatus {
 	res := status.Unknown
-	if !a.MatchAll && !slices.Contains(a.Types, cond.Type) && !slices.Contains(a.ReversedPolarityTypes, cond.Type) {
+	progressing := false
+	match, reverse, targetProgressing, targetRes := a.match(cond.Type)
+
+	if !match {
 		return ConditionStatusNoMatch
 	}
 
-	reverse := slices.Contains(a.ReversedPolarityTypes, cond.Type)
-	switch cond.Status {
-	case metav1.ConditionTrue:
-		if reverse {
-			res = status.Error
-		} else {
-			res = status.Ok
-		}
-	case metav1.ConditionFalse:
-		if reverse {
-			res = status.Ok
-		} else {
-			res = status.Error
-		}
+	if (!reverse && cond.Status == metav1.ConditionFalse) ||
+		(reverse && cond.Status == metav1.ConditionTrue) {
+		res = targetRes
+		progressing = targetProgressing
+	} else if cond.Status == metav1.ConditionUnknown {
+		res = status.Unknown
+	} else {
+		res = status.Ok
 	}
+
 	return status.ConditionStatus{
 		Condition: cond,
 		CondStatus: &status.Status{
-			Result: res,
+			Result:      res,
+			Progressing: progressing,
 		},
 	}
 }

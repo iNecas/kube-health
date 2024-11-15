@@ -131,8 +131,8 @@ func (a MyAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
 	// By default it considers True conditions to be Ok, unless they are listed
 	// in ReversedPolarityTypes.
 	myConditionsAnalyzer := analyze.GenericConditionAnalyzer{
-		Types:                 []string{"WeAreTheChampions"},
-		ReversedPolarityTypes: []string{"UnderPressure"},
+		Conditions:                 analyze.NewStringMatchers("WeAreTheChampions"),
+		ReversedPolarityConditions: analyze.NewStringMatchers("UnderPressure"),
 	}
 
 	// AnalyzeObjectConditions analyzes conditions in `status.conditions` field.
@@ -174,6 +174,47 @@ func init() {
 	})
 }
 ```
+
+## Conditions analyzers
+
+Given conditions are used frequently to describe the status of an object,
+there are some helpers to make the job easier.
+
+The most straightforward way to define a condition analyzer is by using
+the `analyze.GenericConditionAnalyzer` struct like this:
+
+```go
+myCondAnalyzer := analyze.GenericConditionAnalyzer{
+	// Ok when true
+	Conditions:                 analyze.NewStringMatchers("Installed"),
+	// Ok when false
+	ReversedPolarityConditions: analyze.NewRegexpMatchers("Degraded", "Pressure"),
+	// Progressing when matched
+	ProgressingConditions:      analyze.NewStringMatchers("Reconciling"),
+	// Warning instead of Error
+	WarningConditions:          analyze.NewRegexpMatchers("Pressure"),
+	// Unknown instead of Error - conditions to be ignored
+	UnknownConditions:          analyze.NewRegexpMatchers("Disabled"),
+},
+```
+
+This code would lead to the following results:
+
+| Condition         | True                 | False   |
+|-------------------|----------------------|---------|
+| Installed         | Ok                   | Error   |
+| ComponentDegraded | Error                | Ok      |
+| MemoryPressure    | Warning              | Ok      |
+| Reconciling       | Unknown(Progressing) | Unknown |
+| Disabled          | Unknown              | Unknown |
+
+
+If the object contains the conditions in `status.conditions` key, the easiest
+way is to use the `analyze.AnalyzeObjectConditions` function. In more advanced
+cases, `analyze.AnalyzeRawConditions` or `analyze.AnalyzeConditions` can be used.
+
+Once the conditions have been analyzed, they can be aggregated to the object status
+with `analyze.AggregateResult(obj, nil, conditions)`.
 
 ## Sub-objects status evaluation
 
