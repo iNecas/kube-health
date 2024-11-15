@@ -24,7 +24,7 @@ var (
 	gkOLMOperatorGroup             = schema.GroupKind{Group: "operators.coreos.com", Kind: "OperatorGroup"}
 	gkOLMCSV                       = schema.GroupKind{Group: "operators.coreos.com", Kind: "ClusterServiceVersion"}
 	subscriptionConditionsAnalyzer = analyze.GenericConditionAnalyzer{
-		ReversedPolarityTypes: []string{"CatalogSourcesUnhealthy", "ResolutionFailed"},
+		ReversedPolarityConditions: analyze.NewStringMatchers("CatalogSourcesUnhealthy", "ResolutionFailed"),
 	}
 
 	olmAlwaysGreenAnalyzer = analyze.AlwaysGreenAnalyzer{Kinds: []schema.GroupKind{gkOLMOperatorGroup}}

@@ -29,14 +29,21 @@ var (
 	// applicable to the condition.
 	ConditionStatusNoMatch = status.ConditionStatus{}
 
+	// CommonConditionsAnalyzer is a generic condition analyzer that can be used
+	// for any condition type. It's one of the default analyzers.
+	CommonConditionsAnalyzer = GenericConditionAnalyzer{
+		MatchAll:   true,
+		Conditions: NewStringMatchers("Ready"),
+		ReversedPolarityConditions: append(NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+			NewStringMatchers("Progressing")...),
+		ProgressingConditions: NewStringMatchers("Progressing"),
+		WarningConditions:     NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+		UnknownConditions:     NewRegexpMatchers("Disabled"),
+	}
+
 	// DefaultConditionAnalyzers is a list of condition analyzers that are used
 	// by default. They should be applicable to a broad range of resources.
-	DefaultConditionAnalyzers = []ConditionAnalyzer{
-		ReadyConditionAnalyzer{},
-		ProgressingConditionAnalyzer{},
-		GenericConditionAnalyzer{MatchAll: true,
-			ReversedPolarityTypes: []string{"Degraded"}},
-	}
+	DefaultConditionAnalyzers = []ConditionAnalyzer{CommonConditionsAnalyzer}
 
 	// Register is a global registry of analyzers.
 	Register = &AnalyzerRegister{}
