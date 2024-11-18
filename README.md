@@ -28,8 +28,8 @@ kube-health <object-type>/<object-name>
 Besides the health of the object itself, it shows the details from sub-resources
 (including tail of logs of the failed container in this case).
 
-By default, the sub-resources are only displayed for objects in abnormal state. Use `-A`
-to show details for objects with OK status as well.
+By default, the sub-resources are only displayed for objects in abnormal state. Use `-H`
+to show details for objects with healthy (OK) status as well.
 
 It's possible to combine `kube-health` with `kubectl apply` via a pipe:
 

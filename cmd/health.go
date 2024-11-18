@@ -80,7 +80,7 @@ func (f *flags) addFlags(fl *pflag.FlagSet) {
 		"Wait forever")
 	fs.BoolVarP(&f.showGroup, "show-group", "G", false,
 		"For each object, show API group it belongs to")
-	fs.BoolVarP(&f.showOk, "show-all", "A", false,
+	fs.BoolVarP(&f.showOk, "show-healthy", "H", false,
 		"Show details for all objects, including those with OK status")
 	fs.IntVar(&f.width, "width", -1,
 		"Width of the output. By default, it's inferred from the terminal width. Set to 0 to disable wrapping")
