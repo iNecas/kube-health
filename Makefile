@@ -8,7 +8,7 @@ default: help
 
 build:     ## Builds the CLI
 	go build \
-	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-ldflags "-w -X ${PACKAGE}/cmd.Version=${VERSION} -X ${PACKAGE}/cmd.Commit=${GIT} -X ${PACKAGE}/cmd.Date=${DATE}" \
     -a -o bin/${NAME} ./main.go
 
 help:

@@ -27,9 +27,9 @@ import (
 
 var (
 	exitCode int
-	version  = "dev"
-	commit   = "dev"
-	date     = "n/a"
+	Version  = "dev"
+	Commit   = "dev"
+	Date     = "n/a"
 )
 
 func Execute() {
@@ -106,7 +106,7 @@ func (f *flags) printOpts() print.PrintOptions {
 func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, posArgs []string) error {
 		if fl.printVersion {
-			fmt.Printf("kube-health %s (commit %s, built at %s)\n", version, commit, date)
+			fmt.Printf("kube-health %s (commit %s, built at %s)\n", Version, Commit, Date)
 			return nil
 		}
 		if len(posArgs) == 0 {
