@@ -38,8 +38,8 @@ func Execute() {
 	flags := newFlags()
 
 	cmd := &cobra.Command{
-		Use:          "kubectl status",
-		Short:        "Monitor Kubernetes resource status",
+		Use:          "kubectl health",
+		Short:        "Monitor Kubernetes resource health",
 		SilenceUsage: true,
 		RunE:         runFunc(flags),
 	}
