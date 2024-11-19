@@ -14,6 +14,14 @@ import (
 	"github.com/inecas/kube-health/pkg/status"
 )
 
+const (
+	// NamespaceALL is a special value to specify all namespaces.
+	NamespaceAll = "*all*"
+	// NamespaceNone is a special value to specify no namespace: it's used to indicate
+	// interest only to non-namespaced resources.
+	NamespaceNone = ""
+)
+
 // QuerySpec is a specification of a query for objects.
 //
 // It's a generic interface Loader understands to load objects. The methods
@@ -162,6 +170,25 @@ func intersect2[T comparable](a, b []T) []T {
 	}
 
 	return intersection
+}
+
+// KindQuerySpec is a query that returns objects matching specific kinds
+// in the specified namespace.
+type KindQuerySpec struct {
+	GK GroupKindMatcher
+	Ns string
+}
+
+func (ks KindQuerySpec) Namespace() string {
+	return ks.Ns
+}
+
+func (qs KindQuerySpec) GroupKindMatcher() GroupKindMatcher {
+	return qs.GK
+}
+
+func (qs KindQuerySpec) Eval(l *Loader) []*status.Object {
+	return l.Filter(qs.Namespace(), qs.GK)
 }
 
 // OwnerQuerySpec is a query that returns objects owned by the specified object.

@@ -139,9 +139,17 @@ func (l *Loader) Get(ctx context.Context, obj *status.Object) (*status.Object, e
 // searching for objects based on the ownership relations.
 func (l *Loader) Filter(ns string, matcher GroupKindMatcher) []*status.Object {
 	ret := []*status.Object{}
-	for gk, objects := range l.getNsCache(ns).objects {
-		if matcher.Match(gk) {
-			ret = append(ret, objects...)
+	if ns == NamespaceAll {
+		for ns := range l.nsCache {
+			if ns != NamespaceAll { // prevent infinite recursion
+				ret = append(ret, l.Filter(ns, matcher)...)
+			}
+		}
+	} else {
+		for gk, objects := range l.getNsCache(ns).objects {
+			if matcher.Match(gk) {
+				ret = append(ret, objects...)
+			}
 		}
 	}
 	return ret
@@ -172,12 +180,33 @@ func (l *Loader) loadNamespace(ctx context.Context, ns string) error {
 
 	nsCache.needsRefill = false
 
+	touchedNs := make(map[string]struct{})
+
 	for _, unst := range unsts {
-		l.injest(unst)
+		if _, found := l.cache[unst.GetUID()]; found {
+			continue
+		}
+		obj, err := l.injest(unst)
+		if err != nil {
+			return err
+		}
+
+		touchedNs[unst.GetNamespace()] = struct{}{}
+
+		// Inject only adds the object to it's home namespace. When we're loading
+		// the NamespaceAll, we also mark the object as loaded here to avoid
+		// loading it multiple times.
+		if ns == NamespaceAll {
+			nsCache.append(obj)
+		}
 	}
 
-	if !slices.Contains(l.ownershipRefreshNs, ns) {
-		l.ownershipRefreshNs = append(l.ownershipRefreshNs, ns)
+	// Mark namespaces that were affected after the load.
+	// We can't use the original ns, as it might be the NamespaceAll placeholder.
+	for ns := range touchedNs {
+		if !slices.Contains(l.ownershipRefreshNs, ns) {
+			l.ownershipRefreshNs = append(l.ownershipRefreshNs, ns)
+		}
 	}
 
 	return nil
@@ -189,7 +218,7 @@ func (l *Loader) injest(unst *unstructured.Unstructured) (*status.Object, error)
 		return nil, err
 	}
 
-	l.cache[obj.GetUID()] = obj
+	l.cache[obj.UID] = obj
 
 	l.getNsCache(obj.GetNamespace()).append(obj)
 

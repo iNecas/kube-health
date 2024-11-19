@@ -1,0 +1,28 @@
+# This example shows more extended version of using the monitoring feature,
+# expanding though various core K8s and third-party resources.
+
+targets:
+- category: compute
+  kinds:
+  - node
+
+  # Machineconfig-related resources: OpenShift only
+  - machineconfig
+  - machineconfigpool
+
+- category: workloads
+  kinds:
+  - deployment
+  - statefulset
+  - daemonset
+
+# OpenShift-related resources for running the cluster
+- category: cluster-core
+  kinds:
+  - clusteroperator
+
+# Resources related to optional logging stack running in the cluster.
+- category: logging
+  kinds:
+  - lokistacks.loki.grafana.com
+  - clusterloggings.logging.openshift.io

@@ -1,0 +1,12 @@
+# Very simple monitoring configuration limited only to some core resources.
+
+targets:
+- category: compute
+  kinds:
+  - node
+
+- category: workloads
+  kinds:
+  - deployment
+  - statefulset
+  - daemonset

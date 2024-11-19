@@ -37,6 +37,7 @@ type client struct {
 	corev1client   corev1client.CoreV1Interface
 	nsResources    []schema.GroupVersionResource
 	nonNsResources []schema.GroupVersionResource
+	gvrCache       map[schema.GroupVersionResource]schema.GroupKind
 }
 
 func newGenericClient(clientGetter RESTClientGetter) (*client, error) {
@@ -69,6 +70,7 @@ func newGenericClient(clientGetter RESTClientGetter) (*client, error) {
 		dynamic:      dynamic,
 		corev1client: coreclient,
 		mapper:       mapper,
+		gvrCache:     make(map[schema.GroupVersionResource]schema.GroupKind),
 	}
 
 	if err := ret.discover(discovery); err != nil {
@@ -121,14 +123,8 @@ func (c *client) discover(discovery discoveryclient.DiscoveryInterface) error {
 // when we already loaded the objects before).
 func (c *client) listWithMatcher(ctx context.Context, ns string,
 	matcher GroupKindMatcher, excludedGks []schema.GroupKind) ([]*unstructured.Unstructured, error) {
-	var resources []schema.GroupVersionResource
-	if ns != "" {
-		resources = c.nsResources
-	} else {
-		resources = c.nonNsResources
-	}
 
-	resources = c.evalGroupKindMatcher(resources, matcher)
+	resources := c.compileGroupKindMatcher(matcher, ns)
 
 	if len(excludedGks) > 0 {
 		resources = c.filterResources(resources, true, nil, excludedGks)
@@ -137,18 +133,49 @@ func (c *client) listWithMatcher(ctx context.Context, ns string,
 	return c.listBulk(ctx, ns, resources)
 }
 
+func (c *client) compileGroupKindMatcher(matcher GroupKindMatcher, ns string) []schema.GroupVersionResource {
+	filterResources := func(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
+		return c.filterResources(resources, matcher.IncludeAll, matcher.IncludedKinds, matcher.ExcludedKinds)
+	}
+	var ret []schema.GroupVersionResource
+
+	if ns == NamespaceNone || ns == NamespaceAll {
+		ret = append(ret, filterResources(c.nonNsResources)...)
+	}
+
+	if ns != NamespaceNone || ns == NamespaceAll {
+		ret = append(ret, filterResources(c.nsResources)...)
+	}
+
+	return ret
+}
+
+func (c *client) gvrToGk(res schema.GroupVersionResource) (schema.GroupKind, error) {
+	if gk, ok := c.gvrCache[res]; ok {
+		return gk, nil
+	}
+	gvk, err := c.mapper.KindFor(res)
+
+	if err != nil {
+		return schema.GroupKind{}, err
+	}
+
+	c.gvrCache[res] = gvk.GroupKind()
+	return gvk.GroupKind(), nil
+}
+
 func (c *client) filterResources(resources []schema.GroupVersionResource,
 	includeAll bool, includedGks, excludedGks []schema.GroupKind) []schema.GroupVersionResource {
 	var filtered []schema.GroupVersionResource
 	for _, res := range resources {
-		resGk, err := c.mapper.KindFor(res)
+		resGk, err := c.gvrToGk(res)
 		if err != nil {
 			klog.V(2).Infof("failed to get kind for resource: %v", err)
 			continue
 		}
 
 		if len(includedGks) > 0 {
-			if slices.Contains(includedGks, resGk.GroupKind()) {
+			if slices.Contains(includedGks, resGk) {
 				filtered = append(filtered, res)
 			}
 			continue
@@ -161,7 +188,7 @@ func (c *client) filterResources(resources []schema.GroupVersionResource,
 		}
 
 		if len(excludedGks) > 0 {
-			if !slices.Contains(excludedGks, resGk.GroupKind()) {
+			if !slices.Contains(excludedGks, resGk) {
 				filtered = append(filtered, res)
 			}
 			continue
@@ -173,15 +200,13 @@ func (c *client) filterResources(resources []schema.GroupVersionResource,
 	return filtered
 }
 
-func (c *client) evalGroupKindMatcher(resources []schema.GroupVersionResource,
-	matcher GroupKindMatcher) []schema.GroupVersionResource {
-	return c.filterResources(resources, matcher.IncludeAll, matcher.IncludedKinds, matcher.ExcludedKinds)
-}
-
 // listBulk lists all objects of the resources in the given namespace.
 // The loading happens in parallel. If any of the resources fails to load,
 // we return an error. We return the first error that occurred.
 func (c *client) listBulk(ctx context.Context, ns string, resources []schema.GroupVersionResource) ([]*unstructured.Unstructured, error) {
+	if len(resources) == 0 {
+		return nil, nil
+	}
 	resultsChan := make(chan []*unstructured.Unstructured)
 	doneChan := make(chan struct{})
 	wg := sync.WaitGroup{}
@@ -194,7 +219,7 @@ func (c *client) listBulk(ctx context.Context, ns string, resources []schema.Gro
 		close(doneChan)
 	}()
 
-	klog.V(2).InfoS("starting to query resources", "count", len(resources))
+	klog.V(3).InfoS("starting to query resources", "count", len(resources))
 	var errResult error
 
 	for _, resource := range resources {
@@ -215,7 +240,7 @@ func (c *client) listBulk(ctx context.Context, ns string, resources []schema.Gro
 	close(resultsChan)
 	<-doneChan
 
-	klog.V(2).Infof("query results", "objects", len(out), "error", errResult)
+	klog.V(3).InfoS("query results", "objects", len(out), "error", errResult)
 	return out, errResult
 }
 
@@ -227,7 +252,7 @@ func (c *client) list(ctx context.Context, resource schema.GroupVersionResource,
 	for {
 		var intf dynamicclient.ResourceInterface
 		nintf := c.dynamic.Resource(resource)
-		if ns != "" {
+		if ns != "" && ns != NamespaceAll {
 			intf = nintf.Namespace(ns)
 		} else {
 			intf = nintf

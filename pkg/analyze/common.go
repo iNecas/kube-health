@@ -8,21 +8,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/inecas/kube-health/pkg/eval"
 	"github.com/inecas/kube-health/pkg/status"
 )
 
 // ignoredGroupKinds is a list of GroupKinds that are ignored by the default
 // when evaluating sub-objects.
 // These are mostly resources that are not interesting for the status evaluation.
-var ignoredGroupKinds = []schema.GroupKind{
-	{Kind: "ConfigMap"},
-	{Kind: "ServiceAccount"},
-	{Kind: "Role", Group: "rbac.authorization.k8s.io"},
-	{Kind: "RoleBinding", Group: "rbac.authorization.k8s.io"},
-	{Kind: "Secret"},
-	{Kind: "EndpointSlice", Group: "discovery.k8s.io"},
-	{Kind: "Service", Group: ""},
-	{Kind: "ControllerRevision", Group: "apps"},
+var (
+	ignoredGroupKinds = []schema.GroupKind{
+		{Kind: "ConfigMap"},
+		{Kind: "ServiceAccount"},
+		{Kind: "Role", Group: "rbac.authorization.k8s.io"},
+		{Kind: "RoleBinding", Group: "rbac.authorization.k8s.io"},
+		{Kind: "Secret"},
+		{Kind: "EndpointSlice", Group: "discovery.k8s.io"},
+		{Kind: "Service", Group: ""},
+		{Kind: "ControllerRevision", Group: "apps"},
+	}
+
+	// CommonConditionsAnalyzer is a generic condition analyzer that can be used
+	// for any condition type. It's one of the default analyzers.
+	CommonConditionsAnalyzer = GenericConditionAnalyzer{
+		MatchAll:   true,
+		Conditions: NewStringMatchers("Ready"),
+		ReversedPolarityConditions: append(NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+			NewStringMatchers("Progressing")...),
+		ProgressingConditions: NewStringMatchers("Progressing"),
+		WarningConditions:     NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+		UnknownConditions:     NewRegexpMatchers("Disabled"),
+	}
+
+	// DefaultConditionAnalyzers is a list of condition analyzers that are used
+	// by default. They should be applicable to a broad range of resources.
+	DefaultConditionAnalyzers = []ConditionAnalyzer{CommonConditionsAnalyzer}
+)
+
+func DefaultAnalyzerInit(e *eval.Evaluator) eval.Analyzer {
+	return &GenericAnalyzer{
+		e:                   e,
+		conditionsAnalyzers: DefaultConditionAnalyzers,
+	}
 }
 
 type Matcher interface {

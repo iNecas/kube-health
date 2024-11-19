@@ -38,7 +38,7 @@ func Execute() {
 	flags := newFlags()
 
 	cmd := &cobra.Command{
-		Use:          "kubectl health",
+		Use:          "kube-health",
 		Short:        "Monitor Kubernetes resource health",
 		SilenceUsage: true,
 		RunE:         runFunc(flags),
@@ -106,7 +106,7 @@ func (f *flags) printOpts() print.PrintOptions {
 func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, posArgs []string) error {
 		if fl.printVersion {
-			fmt.Printf("kube-health %s (commit %s, built at %s)\n", Version, Commit, Date)
+			PrintVersion()
 			return nil
 		}
 		if len(posArgs) == 0 {
@@ -257,4 +257,8 @@ func setExitCode(statuses []status.ObjectStatus) {
 			exitCode = exitCode | 0b1000
 		}
 	}
+}
+
+func PrintVersion() {
+	fmt.Printf("kube-health %s (commit %s, built at %s)\n", Version, Commit, Date)
 }

@@ -12,8 +12,22 @@ different kinds.
 * Wait for reconciliation.
 * Differentiating between progressing and stalled status.
 * Combine the command with others, e.g. `kubectl apply`.
-* Use via CLI or as a library.
+* Use via CLI, Prometheus/Grafana or as a library.
 * Extensibility for implementing non-standard health evaluation logic.
+
+## Installation
+
+Use one of these methods:
+
+* Get binaries for Linux and Mac are available as tarballs from [the releases page](https://github.com/inecas/kube-health/releases).
+* Using `go install`:
+   ```shell
+   go install github.com/inecas/kube-health@latest
+   ```
+* Building from source with:
+   ``` shell
+   make build
+   ```
 
 ## CLI Usage
 
@@ -59,20 +73,26 @@ There are multiple waiting strategies implemented:
 If some resources are progressing, `8` is added to the exit code: use bitwise
 AND to extract this information.
 
-## Installation
+## Use with Prometheus/Grafana
 
-* Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/inecas/kube-health/releases) page.
-* Using `go install`:
-
-   ```shell
-   go install github.com/inecas/kube-health@latest
-   ```
-
-## Library Usage
-
-Besides just using kube-health from command line, it is possible to
+Besides using `kube-health` from command line, it is possible to
 leverage the functionality on the server side as well, e.g. exporting resources
-health via monitoring stack. Example TBD.
+health via monitoring stack.
+
+![Grafana dashboard](./docs/grafana.png)
+
+1. Get the binaries for `kube-health-monitor` from [the releases page](https://github.com/inecas/kube-health/releases) or build it from source with:
+   ``` shell
+   make build-monitor
+   ```
+2. Create a `monitor.yaml` file. See [the example monitor yaml files](docs/example) for more details.
+3. Run the monitor process that continuously monitors the objects from definition
+and exports it via Prometheus metrics:
+   ``` shell
+   kube-health-monitor --config <path/to/my/monitor.yaml> -v1
+   ```
+4. Configure Prometheus to scan the target (exposed at `localhost:8080` by default).
+5. Import one of [the example Grafana dashboard files](docs/example) and update based on your needs.
 
 ## Motivation
 
