@@ -22,7 +22,9 @@ var (
 	// It's empty right now, but it can be configured to match specific kinds
 	// we want to always consider OK.
 	DefaultAlwaysGreenAnalyzer = AlwaysGreenAnalyzer{
-		Kinds: []schema.GroupKind{},
+		Kinds: []schema.GroupKind{
+			{Group: "", Kind: "Namespace"},
+		},
 	}
 
 	// ConditionStatusNoMatch is returned by condition analyzer when it's not
