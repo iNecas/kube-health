@@ -107,6 +107,10 @@ func (a PodAnalyzer) analyzeContainer(obj *status.Object, cs corev1.ContainerSta
 		cond.LastTransitionTime = cs.State.Running.StartedAt
 	}
 
+	if !cs.Ready {
+		cond = SyntheticConditionError("Ready", "NotReady", "")
+	}
+
 	if cs.State.Terminated != nil {
 		reason := cs.State.Terminated.Reason
 		cond = SyntheticConditionError("Terminated", reason, "")
