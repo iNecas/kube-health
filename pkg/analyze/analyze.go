@@ -184,8 +184,6 @@ func DefaultAnalyzers() []eval.AnalyzerInit {
 
 // TODO: add support for more kinds from
 // https://github.com/kubernetes-sigs/cli-utils/blob/master/pkg/kstatus/status/core.go
-// - [  ] pvc
-// - [  ] service
 // - [  ] statefulset
 // - [  ] job
 // - [  ] daemonset
