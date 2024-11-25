@@ -182,5 +182,5 @@ func init() {
 	analyze.Register.Register(func(e *eval.Evaluator) eval.Analyzer {
 		return OLMSubscriptionAnalyzer{e: e}
 	})
-
+	analyze.Register.RegisterSimple(olmAlwaysGreenAnalyzer)
 }
