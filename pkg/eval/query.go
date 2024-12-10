@@ -251,6 +251,9 @@ func (qs LabelQuerySpec) Namespace() string {
 func (qs LabelQuerySpec) Eval(l *Loader) []*status.Object {
 	candidates := l.Filter(qs.Object.GetNamespace(), qs.GK)
 	var ret []*status.Object
+	if qs.Selector == nil {
+		return ret
+	}
 
 	for _, cand := range candidates {
 		if qs.Selector.Matches(labels.Set(cand.GetLabels())) {
