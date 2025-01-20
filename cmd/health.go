@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -168,15 +167,14 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 		poller := eval.NewStatusPoller(2*time.Second, evaluator, objects)
 		updatesChan := poller.Start(ctx)
 
-		ioStreams := genericiooptions.IOStreams{
-			In:     cmd.InOrStdin(),
-			Out:    cmd.OutOrStdout(),
-			ErrOut: cmd.ErrOrStderr(),
+		ioStreams := print.OutStreams{
+			Std: cmd.OutOrStdout(),
+			Err: cmd.ErrOrStderr(),
 		}
 		printer := print.NewTablePrinter(ioStreams, fl.printOpts())
 
 		wf := waitFunction(fl, cancelFunc)
-		print.NewPeriodicPrinter(printer, updatesChan, wf).Start()
+		print.NewPeriodicPrinter(printer, ioStreams, updatesChan, wf).Start()
 
 		return nil
 	}

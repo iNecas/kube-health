@@ -4,12 +4,12 @@ package print
 
 import (
 	"fmt"
+	"io"
 	"regexp"
 	"slices"
 	"strings"
 	"time"
 
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/utils/integer"
 
 	"github.com/inecas/kube-health/pkg/status"
@@ -195,20 +195,19 @@ func formatObject(obj status.ObjectStatus, root, printGroups bool) string {
 // TablePrinter implements StatusPrinter interface for printing the status
 // of resources in a tabular format.
 type TablePrinter struct {
-	IOStreams genericclioptions.IOStreams
+	Out       OutStreams
 	PrintOpts PrintOptions
 }
 
-func NewTablePrinter(ioStreams genericclioptions.IOStreams, opts PrintOptions) *TablePrinter {
+func NewTablePrinter(out OutStreams, opts PrintOptions) *TablePrinter {
 	return &TablePrinter{
-		IOStreams: ioStreams,
+		Out:       out,
 		PrintOpts: opts,
 	}
 }
 
-func (t *TablePrinter) PrintStatuses(objects []status.ObjectStatus) int {
-	linePrintCount := 0
-	linePrintCount += t.printHeader(conditionsCols)
+func (t *TablePrinter) PrintStatuses(objects []status.ObjectStatus, w io.Writer) {
+	t.printHeader(w, conditionsCols)
 
 	sortObjects(objects)
 
@@ -219,19 +218,12 @@ func (t *TablePrinter) PrintStatuses(objects []status.ObjectStatus) int {
 		if printSubResources {
 			prefixTail = "│ "
 		}
-		linePrintCount += t.printObjectWithConditions(obj, "", prefixTail)
+		t.printObjectWithConditions(w, obj, "", prefixTail)
 
 		if printSubResources {
-			linePrintCount += t.printSubTable(subObjects, "")
+			t.printSubTable(w, subObjects, "")
 		}
 	}
-
-	return linePrintCount
-}
-
-func (t *TablePrinter) PrintError(err error) int {
-	t.Printf("Error: %v\n", err)
-	return 1
 }
 
 // shouldPrintDetails decides whether to print the details of the object.
@@ -242,34 +234,29 @@ func (t *TablePrinter) shouldPrintDetails(obj status.ObjectStatus) bool {
 	return obj.Status().Result > status.Ok || obj.Status().Progressing
 }
 
-func (t *TablePrinter) printObjectWithConditions(obj status.ObjectStatus, prefixHead, prefixTail string) int {
-	linePrintCount := 0
-	linePrintCount += t.printObject(obj, prefixHead)
+func (t *TablePrinter) printObjectWithConditions(w io.Writer, obj status.ObjectStatus, prefixHead, prefixTail string) {
+	t.printObject(w, obj, prefixHead)
 	if t.shouldPrintDetails(obj) {
-		linePrintCount += t.printConditions(obj, prefixTail)
+		t.printConditions(w, obj, prefixTail)
 	}
-	return linePrintCount
 }
 
-func (t *TablePrinter) printObject(obj status.ObjectStatus, prefix string) int {
-	t.Printf("%s%s\n", prefix, formatObject(obj, prefix == "", t.PrintOpts.ShowGroup))
-	return 1
+func (t *TablePrinter) printObject(w io.Writer, obj status.ObjectStatus, prefix string) {
+	t.printf(w, "%s%s\n", prefix, formatObject(obj, prefix == "", t.PrintOpts.ShowGroup))
 }
 
-func (t *TablePrinter) printConditions(obj status.ObjectStatus, prefix string) int {
-	lines := 0
+func (t *TablePrinter) printConditions(w io.Writer, obj status.ObjectStatus, prefix string) {
 	for _, cond := range obj.Conditions {
 		row := formatRow(conditionsCols, cond)
-		lines += t.printRow(row, prefix, prefix)
+		t.printRow(w, row, prefix, prefix)
 		if cond.Status().Result > status.Ok || cond.Status().Progressing {
 			row = formatRow(conditionMessageCols, cond)
-			lines += t.printRow(row, prefix, prefix)
+			t.printRow(w, row, prefix, prefix)
 		}
 	}
-	return lines
 }
 
-func (t *TablePrinter) printHeader(cols []Column) int {
+func (t *TablePrinter) printHeader(w io.Writer, cols []Column) {
 	row := make([]Cell, len(cols))
 	for i, col := range cols {
 		row[i] = Cell{
@@ -278,10 +265,10 @@ func (t *TablePrinter) printHeader(cols []Column) int {
 		}
 	}
 
-	return t.printRow(row, "", "")
+	t.printRow(w, row, "", "")
 }
 
-func (t *TablePrinter) printRow(row []Cell, prefixHead, prefixTail string) int {
+func (t *TablePrinter) printRow(w io.Writer, row []Cell, prefixHead, prefixTail string) {
 	maxLines := 0
 	cellTxt := make([]string, len(row))
 	curWidth := 0
@@ -337,18 +324,16 @@ func (t *TablePrinter) printRow(row []Cell, prefixHead, prefixTail string) int {
 				txt = padStringKeepControl(txt, cell.Column.Width) + cellSep
 			}
 
-			t.Printf(txt)
+			t.printf(w, txt)
 		}
-		t.Printf("\n")
+		t.printf(w, "\n")
 	}
-	return maxLines
 }
 
 // printSubTable prints out any subresources that belong to the
 // object. This function takes care of printing the correct tree
 // structure and indentation.
-func (t *TablePrinter) printSubTable(objects []status.ObjectStatus, prefix string) int {
-	linePrintCount := 0
+func (t *TablePrinter) printSubTable(w io.Writer, objects []status.ObjectStatus, prefix string) {
 	sortObjects(objects)
 	for j, obj := range objects {
 		var newPrefixHead, newPrefixTail string
@@ -365,7 +350,7 @@ func (t *TablePrinter) printSubTable(objects []status.ObjectStatus, prefix strin
 			newPrefixTail += "│ "
 		}
 
-		linePrintCount += t.printObjectWithConditions(obj, prefix+newPrefixHead, prefix+newPrefixTail)
+		t.printObjectWithConditions(w, obj, prefix+newPrefixHead, prefix+newPrefixTail)
 
 		var newPrefix string
 		if j < len(objects)-1 {
@@ -374,14 +359,13 @@ func (t *TablePrinter) printSubTable(objects []status.ObjectStatus, prefix strin
 			newPrefix = "   "
 		}
 		if t.shouldPrintDetails(obj) {
-			linePrintCount += t.printSubTable(obj.SubStatuses, prefix+newPrefix)
+			t.printSubTable(w, obj.SubStatuses, prefix+newPrefix)
 		}
 	}
-	return linePrintCount
 }
 
-func (t *TablePrinter) Printf(format string, a ...interface{}) {
-	_, err := fmt.Fprintf(t.IOStreams.Out, format, a...)
+func (t *TablePrinter) printf(w io.Writer, format string, a ...interface{}) {
+	_, err := fmt.Fprintf(w, format, a...)
 	if err != nil {
 		panic(err)
 	}
