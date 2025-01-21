@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ func Execute() {
 		RunE:         runFunc(flags),
 	}
 
-	flags.addFlags(cmd.PersistentFlags())
+	flags.addFlags(cmd)
 	if err := cmd.Execute(); err != nil {
 		os.Exit(128)
 	}
@@ -59,16 +60,20 @@ type flags struct {
 	printVersion bool
 	width        int
 	configFlags  *genericclioptions.ConfigFlags
+	printFlags   *genericclioptions.PrintFlags
 }
 
 func newFlags() *flags {
 	return &flags{
 		configFlags: genericclioptions.NewConfigFlags(true),
+		printFlags:  genericclioptions.NewPrintFlags("").WithDefaultOutput("tree+color"),
 	}
 }
 
-func (f *flags) addFlags(fl *pflag.FlagSet) {
+func (f *flags) addFlags(cmd *cobra.Command) {
+	fl := cmd.PersistentFlags()
 	f.configFlags.AddFlags(fl)
+	f.addPrintFlags(cmd)
 
 	fs := pflag.NewFlagSet("options", pflag.ExitOnError)
 	fs.BoolVarP(&f.waitProgress, "wait-progress", "W", false,
@@ -87,6 +92,25 @@ func (f *flags) addFlags(fl *pflag.FlagSet) {
 	fl.AddFlagSet(fs)
 }
 
+// AddFlags receives a *cobra.Command reference and binds
+// flags related to JSON/Yaml/Name/Template printing to it
+func (f *flags) addPrintFlags(cmd *cobra.Command) {
+	f.printFlags.JSONYamlPrintFlags.AddFlags(cmd)
+	f.printFlags.TemplatePrinterFlags.AddFlags(cmd)
+
+	allowedFormats := append([]string{"tree", "tree+color"}, f.printFlags.AllowedFormats()...)
+
+	if f.printFlags.OutputFormat != nil {
+		cmd.Flags().StringVarP(f.printFlags.OutputFormat, "output", "o", *f.printFlags.OutputFormat,
+			fmt.Sprintf(`Output format. One of: (%s).`, strings.Join(allowedFormats, ", ")))
+		if f.printFlags.OutputFlagSpecified == nil {
+			f.printFlags.OutputFlagSpecified = func() bool {
+				return cmd.Flag("output").Changed
+			}
+		}
+	}
+}
+
 func (f *flags) printOpts() print.PrintOptions {
 	termWidth := f.width
 	if termWidth < 0 {
@@ -99,6 +123,21 @@ func (f *flags) printOpts() print.PrintOptions {
 		ShowGroup: f.showGroup,
 		ShowOk:    f.showOk,
 		Width:     termWidth,
+	}
+}
+
+func (f *flags) toPrinter() (print.StatusPrinter, error) {
+	switch *f.printFlags.OutputFormat {
+	case "tree":
+		return print.NewTablePrinter(f.printOpts()), nil
+	case "tree+color":
+		return print.NewTablePrinter(f.printOpts()), nil
+	default:
+		kubectlPrinter, err := f.printFlags.ToPrinter()
+		if err != nil {
+			return nil, err
+		}
+		return print.KubectlPrinter{Printer: kubectlPrinter}, nil
 	}
 }
 
@@ -167,11 +206,15 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 		poller := eval.NewStatusPoller(2*time.Second, evaluator, objects)
 		updatesChan := poller.Start(ctx)
 
+		printer, err := fl.toPrinter()
+		if err != nil {
+			return fmt.Errorf("Can't create printer: %w", err)
+		}
+
 		ioStreams := print.OutStreams{
 			Std: cmd.OutOrStdout(),
 			Err: cmd.ErrOrStderr(),
 		}
-		printer := print.NewTablePrinter(ioStreams, fl.printOpts())
 
 		wf := waitFunction(fl, cancelFunc)
 		print.NewPeriodicPrinter(printer, ioStreams, updatesChan, wf).Start()

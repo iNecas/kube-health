@@ -53,7 +53,7 @@ func (p *PeriodicPrinter) Start() {
 		}
 		p.resetScreen()
 
-		// Wrap writer to count number of emitted lines.
+		// Wrap writer to count number of emited lines.
 		lcw := &lineCountWriter{w: p.out.Std}
 		p.printer.PrintStatuses(update.Statuses, lcw)
 		p.previousLines = lcw.lines

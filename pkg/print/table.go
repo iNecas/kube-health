@@ -195,13 +195,11 @@ func formatObject(obj status.ObjectStatus, root, printGroups bool) string {
 // TablePrinter implements StatusPrinter interface for printing the status
 // of resources in a tabular format.
 type TablePrinter struct {
-	Out       OutStreams
 	PrintOpts PrintOptions
 }
 
-func NewTablePrinter(out OutStreams, opts PrintOptions) *TablePrinter {
+func NewTablePrinter(opts PrintOptions) *TablePrinter {
 	return &TablePrinter{
-		Out:       out,
 		PrintOpts: opts,
 	}
 }
