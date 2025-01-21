@@ -1,6 +1,9 @@
 package status
 
 import (
+	"encoding/json"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,12 +30,22 @@ func (s Result) String() string {
 	}
 }
 
+func (r Result) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToLower(r.String()))
+}
+
 // Status is the core structure representing the status of an object.
 type Status struct {
-	Result      Result // mapping to Result enum
-	Progressing bool   // true if the object is still progressing
-	Status      string // human readable status
-	Err         error  // error appeared during the evaluation
+	Result      Result `json:"result"`        // mapping to Result enum
+	Progressing bool   `json:"progressing"`   // true if the object is still progressing
+	Status      string `json:"-"`             // human readable status
+	Err         error  `json:"err,omitempty"` // error appeared during the evaluation
+}
+
+func (in *Status) DeepCopy() *Status {
+	out := new(Status)
+	*out = *in
+	return out
 }
 
 // ObjectStatus combines the object with status-related information.
@@ -51,7 +64,13 @@ type ConditionStatus struct {
 	*metav1.Condition
 	// CondStatus is a pointer to the underlying condition status.
 	// We're using the pointer to allow modifying the status.
-	CondStatus *Status
+	CondStatus *Status `json:"health"`
+}
+
+func (in *ConditionStatus) DeepCopy() *ConditionStatus {
+	out := new(ConditionStatus)
+	*out = *in
+	return out
 }
 
 func (cs ConditionStatus) Status() Status {
