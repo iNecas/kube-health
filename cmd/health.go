@@ -119,19 +119,23 @@ func (f *flags) printOpts() print.PrintOptions {
 			termWidth = int(termsize.Width)
 		}
 	}
-	return print.PrintOptions{
+	po := print.PrintOptions{
 		ShowGroup: f.showGroup,
 		ShowOk:    f.showOk,
 		Width:     termWidth,
 	}
+
+	if strings.Contains(*f.printFlags.OutputFormat, "+color") {
+		po.Color = true
+	}
+
+	return po
 }
 
 func (f *flags) toPrinter() (print.StatusPrinter, error) {
 	switch *f.printFlags.OutputFormat {
-	case "tree":
-		return print.NewTablePrinter(f.printOpts()), nil
-	case "tree+color":
-		return print.NewTablePrinter(f.printOpts()), nil
+	case "tree", "tree+color":
+		return print.NewTreePrinter(f.printOpts()), nil
 	default:
 		kubectlPrinter, err := f.printFlags.ToPrinter()
 		if err != nil {
@@ -211,13 +215,13 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("Can't create printer: %w", err)
 		}
 
-		ioStreams := print.OutStreams{
+		outStreams := print.OutStreams{
 			Std: cmd.OutOrStdout(),
 			Err: cmd.ErrOrStderr(),
 		}
 
 		wf := waitFunction(fl, cancelFunc)
-		print.NewPeriodicPrinter(printer, ioStreams, updatesChan, wf).Start()
+		print.NewPeriodicPrinter(printer, outStreams, updatesChan, wf).Start()
 
 		return nil
 	}
