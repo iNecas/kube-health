@@ -26,7 +26,7 @@ type Column struct {
 	Width       int
 	MaxLineWrap int // Maximum number of lines to wrap the content to.
 	WrapPrefix  string
-	FormatFn    func(obj interface{}) string
+	FormatFn    func(o PrintOptions, obj interface{}) string
 }
 
 // Cell is a single cell in a table in a specific column.
@@ -38,24 +38,24 @@ type Cell struct {
 // FormatFn is a wrapper of a function of specific type to a function
 // of interface{}. It acts as an adapter to allow using the function
 // with the Column.FormatFn.
-func FormatFn[T any](formatFn func(T) string) func(interface{}) string {
-	return func(obj interface{}) string {
-		return formatFn(obj.(T))
+func FormatFn[T any](formatFn func(PrintOptions, T) string) func(PrintOptions, interface{}) string {
+	return func(o PrintOptions, obj interface{}) string {
+		return formatFn(o, obj.(T))
 	}
 }
 
 // Format turns the object into a string for the Cell using the FormatFn.
-func (c Column) Format(obj interface{}) Cell {
+func (c Column) Format(o PrintOptions, obj interface{}) Cell {
 	return Cell{
-		Content: c.FormatFn(obj),
+		Content: c.FormatFn(o, obj),
 		Column:  c,
 	}
 }
 
-func formatRow(cols []Column, obj interface{}) []Cell {
+func formatRow(cols []Column, o PrintOptions, obj interface{}) []Cell {
 	row := make([]Cell, len(cols))
 	for i, col := range cols {
-		cell := col.Format(obj)
+		cell := col.Format(o, obj)
 		row[i] = cell
 	}
 	return row
@@ -65,7 +65,7 @@ func blankColumn(header string, width int) Column {
 	return Column{
 		Header:   header,
 		Width:    width,
-		FormatFn: func(obj interface{}) string { return "" },
+		FormatFn: func(o PrintOptions, obj interface{}) string { return "" },
 	}
 }
 
@@ -107,21 +107,31 @@ var (
 	}
 )
 
-func formatConditionType(cond status.ConditionStatus) string {
-	color, setColor := statusColor(cond.Status())
-	if setColor {
-		return SprintfWithColor(color, cond.Type)
+func formatConditionType(o PrintOptions, cond status.ConditionStatus) string {
+	if o.Color {
+		color, setColor := statusColor(cond.Status())
+		if setColor {
+			return SprintfWithColor(color, cond.Type)
+		} else {
+			return cond.Type
+		}
 	} else {
-		return cond.Type
+		ret := fmt.Sprintf("%s=%s", cond.Type, cond.Condition.Status)
+		if cond.CondStatus.Result > status.Ok {
+			ret = fmt.Sprintf("(%s) %s", cond.CondStatus.Result.String(), ret)
+		}
+		return ret
 	}
 }
 
-func formatStatus(obj status.ObjectStatus) string {
+func formatStatus(o PrintOptions, obj status.ObjectStatus) string {
 	s := obj.Status()
-	color, setColor := statusColor(s)
 	ret := statusMessage(s)
-	if setColor {
-		ret = SprintfWithColor(color, ret)
+	if o.Color {
+		color, setColor := statusColor(s)
+		if setColor {
+			ret = SprintfWithColor(color, ret)
+		}
 	}
 	return ret
 }
@@ -150,7 +160,7 @@ func statusMessage(s status.Status) string {
 	}
 }
 
-func formatConditionAge(cond status.ConditionStatus) string {
+func formatConditionAge(o PrintOptions, cond status.ConditionStatus) string {
 	return formatTimeSince(cond.Condition.LastTransitionTime.Time)
 }
 
@@ -169,16 +179,16 @@ func formatTimeSince(t time.Time) string {
 	}
 }
 
-func formatConditionReason(cond status.ConditionStatus) string {
+func formatConditionReason(o PrintOptions, cond status.ConditionStatus) string {
 	return cond.Reason
 }
 
-func formatConditionMessage(cond status.ConditionStatus) string {
+func formatConditionMessage(o PrintOptions, cond status.ConditionStatus) string {
 	return cond.Message
 }
 
-func formatObject(obj status.ObjectStatus, root, printGroups bool) string {
-	status := formatStatus(obj)
+func formatObject(o PrintOptions, obj status.ObjectStatus, root, printGroups bool) string {
+	status := formatStatus(o, obj)
 	fullName := ""
 	if root {
 		fullName += obj.Object.GetNamespace() + "/"
@@ -192,19 +202,19 @@ func formatObject(obj status.ObjectStatus, root, printGroups bool) string {
 	return text
 }
 
-// TablePrinter implements StatusPrinter interface for printing the status
+// TreePrinter implements StatusPrinter interface for printing the status
 // of resources in a tabular format.
-type TablePrinter struct {
+type TreePrinter struct {
 	PrintOpts PrintOptions
 }
 
-func NewTablePrinter(opts PrintOptions) *TablePrinter {
-	return &TablePrinter{
+func NewTreePrinter(opts PrintOptions) *TreePrinter {
+	return &TreePrinter{
 		PrintOpts: opts,
 	}
 }
 
-func (t *TablePrinter) PrintStatuses(objects []status.ObjectStatus, w io.Writer) {
+func (t *TreePrinter) PrintStatuses(objects []status.ObjectStatus, w io.Writer) {
 	t.printHeader(w, conditionsCols)
 
 	sortObjects(objects)
@@ -219,42 +229,42 @@ func (t *TablePrinter) PrintStatuses(objects []status.ObjectStatus, w io.Writer)
 		t.printObjectWithConditions(w, obj, "", prefixTail)
 
 		if printSubResources {
-			t.printSubTable(w, subObjects, "")
+			t.printSubTree(w, subObjects, "")
 		}
 	}
 }
 
 // shouldPrintDetails decides whether to print the details of the object.
-func (t *TablePrinter) shouldPrintDetails(obj status.ObjectStatus) bool {
+func (t *TreePrinter) shouldPrintDetails(obj status.ObjectStatus) bool {
 	if t.PrintOpts.ShowOk {
 		return true
 	}
 	return obj.Status().Result > status.Ok || obj.Status().Progressing
 }
 
-func (t *TablePrinter) printObjectWithConditions(w io.Writer, obj status.ObjectStatus, prefixHead, prefixTail string) {
+func (t *TreePrinter) printObjectWithConditions(w io.Writer, obj status.ObjectStatus, prefixHead, prefixTail string) {
 	t.printObject(w, obj, prefixHead)
 	if t.shouldPrintDetails(obj) {
 		t.printConditions(w, obj, prefixTail)
 	}
 }
 
-func (t *TablePrinter) printObject(w io.Writer, obj status.ObjectStatus, prefix string) {
-	t.printf(w, "%s%s\n", prefix, formatObject(obj, prefix == "", t.PrintOpts.ShowGroup))
+func (t *TreePrinter) printObject(w io.Writer, obj status.ObjectStatus, prefix string) {
+	t.printf(w, "%s%s\n", prefix, formatObject(t.PrintOpts, obj, prefix == "", t.PrintOpts.ShowGroup))
 }
 
-func (t *TablePrinter) printConditions(w io.Writer, obj status.ObjectStatus, prefix string) {
+func (t *TreePrinter) printConditions(w io.Writer, obj status.ObjectStatus, prefix string) {
 	for _, cond := range obj.Conditions {
-		row := formatRow(conditionsCols, cond)
+		row := formatRow(conditionsCols, t.PrintOpts, cond)
 		t.printRow(w, row, prefix, prefix)
 		if cond.Status().Result > status.Ok || cond.Status().Progressing {
-			row = formatRow(conditionMessageCols, cond)
+			row = formatRow(conditionMessageCols, t.PrintOpts, cond)
 			t.printRow(w, row, prefix, prefix)
 		}
 	}
 }
 
-func (t *TablePrinter) printHeader(w io.Writer, cols []Column) {
+func (t *TreePrinter) printHeader(w io.Writer, cols []Column) {
 	row := make([]Cell, len(cols))
 	for i, col := range cols {
 		row[i] = Cell{
@@ -266,7 +276,7 @@ func (t *TablePrinter) printHeader(w io.Writer, cols []Column) {
 	t.printRow(w, row, "", "")
 }
 
-func (t *TablePrinter) printRow(w io.Writer, row []Cell, prefixHead, prefixTail string) {
+func (t *TreePrinter) printRow(w io.Writer, row []Cell, prefixHead, prefixTail string) {
 	maxLines := 0
 	cellTxt := make([]string, len(row))
 	curWidth := 0
@@ -328,10 +338,10 @@ func (t *TablePrinter) printRow(w io.Writer, row []Cell, prefixHead, prefixTail 
 	}
 }
 
-// printSubTable prints out any subresources that belong to the
+// printSubTree prints out any subresources that belong to the
 // object. This function takes care of printing the correct tree
 // structure and indentation.
-func (t *TablePrinter) printSubTable(w io.Writer, objects []status.ObjectStatus, prefix string) {
+func (t *TreePrinter) printSubTree(w io.Writer, objects []status.ObjectStatus, prefix string) {
 	sortObjects(objects)
 	for j, obj := range objects {
 		var newPrefixHead, newPrefixTail string
@@ -357,12 +367,12 @@ func (t *TablePrinter) printSubTable(w io.Writer, objects []status.ObjectStatus,
 			newPrefix = "   "
 		}
 		if t.shouldPrintDetails(obj) {
-			t.printSubTable(w, obj.SubStatuses, prefix+newPrefix)
+			t.printSubTree(w, obj.SubStatuses, prefix+newPrefix)
 		}
 	}
 }
 
-func (t *TablePrinter) printf(w io.Writer, format string, a ...interface{}) {
+func (t *TreePrinter) printf(w io.Writer, format string, a ...interface{}) {
 	_, err := fmt.Fprintf(w, format, a...)
 	if err != nil {
 		panic(err)

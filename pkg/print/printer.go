@@ -10,9 +10,9 @@ type PrintOptions struct {
 	ShowGroup bool // By default, group names are not shown.
 	ShowOk    bool // By default, OK statuses are not shown.
 	Width     int  // Width of the output. If 0, wrapping is disabled.
+	Color     bool // Use colors to indicate the health.
 }
 
-// Simplified printer that allows formatting to stdout and stderr.
 type OutStreams struct {
 	Std io.Writer
 	Err io.Writer
