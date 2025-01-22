@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/cmd/util"
 
@@ -127,19 +126,18 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 
 func (fl *flags) printStatus(ctx context.Context, cmd *cobra.Command, updatesChan <-chan eval.StatusUpdate,
 	cancelFunc func()) {
-	ioStreams := genericiooptions.IOStreams{
-		In:     cmd.InOrStdin(),
-		Out:    cmd.OutOrStdout(),
-		ErrOut: cmd.ErrOrStderr(),
-	}
 
 	printOpts := print.PrintOptions{
 		ShowOk: true,
 	}
 
-	printer := print.NewTablePrinter(ioStreams, printOpts)
+	printer := print.NewTreePrinter(printOpts)
+	outStreams := print.OutStreams{
+		Std: cmd.OutOrStdout(),
+		Err: cmd.ErrOrStderr(),
+	}
 	wf := waitFunction(fl, cancelFunc)
-	print.NewPeriodicPrinter(printer, updatesChan, wf).Start()
+	print.NewPeriodicPrinter(printer, outStreams, updatesChan, wf).Start()
 }
 
 func (fl *flags) startServer(ctx context.Context, updatesChan <-chan monitor.TargetsStatusUpdate) error {
