@@ -59,9 +59,9 @@ func (n *nsCache) updateMatcher(gk GroupKindMatcher) bool {
 	return false
 }
 
-// Loader is responsible for loading and caching the objects from the cluster.
+// RealLoader is responsible for loading and caching the objects from the cluster.
 // It also allows finding objects based on their ownership relations.
-type Loader struct {
+type RealLoader struct {
 	client *client
 	mapper meta.RESTMapper
 
@@ -71,20 +71,20 @@ type Loader struct {
 	ownershipRefreshNs []string                             // indicator to refresh the ownership relations (after a change)
 }
 
-func NewLoader(config RESTClientGetter) (*Loader, error) {
+func NewRealLoader(config RESTClientGetter) (*RealLoader, error) {
 	client, err := newGenericClient(config)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Loader{client: client,
+	return &RealLoader{client: client,
 		cache:     make(map[types.UID]*status.Object),
 		ownership: make(map[types.UID]map[types.UID]struct{}),
 		nsCache:   make(map[string]*nsCache),
 	}, nil
 }
 
-func (l *Loader) extendNsKinds(ns string, gk GroupKindMatcher) {
+func (l *RealLoader) extendNsKinds(ns string, gk GroupKindMatcher) {
 	nsCache := l.getNsCache(ns)
 
 	nsCache.updateMatcher(gk)
@@ -92,14 +92,14 @@ func (l *Loader) extendNsKinds(ns string, gk GroupKindMatcher) {
 
 // Load loads the objects specified by the query. It uses the cache to
 // avoid loading the same objects multiple times.
-func (l *Loader) Load(ctx context.Context, q QuerySpec) ([]*status.Object, error) {
+func (l *RealLoader) Load(ctx context.Context, q QuerySpec) ([]*status.Object, error) {
 	l.preloadQuery(ctx, q)
 	objects := q.Eval(l)
 	return objects, nil
 }
 
 // preloadQuery loads the objects that could match the query spec.
-func (l *Loader) preloadQuery(ctx context.Context, query QuerySpec) {
+func (l *RealLoader) preloadQuery(ctx context.Context, query QuerySpec) {
 	if l.getNsCache(query.Namespace()).updateMatcher(query.GroupKindMatcher()) {
 		l.loadNamespace(ctx, query.Namespace())
 	}
@@ -107,7 +107,7 @@ func (l *Loader) preloadQuery(ctx context.Context, query QuerySpec) {
 
 // Get returns the updated version of the object. If the object is not
 // in the cache, it loads it from the cluster first.
-func (l *Loader) Get(ctx context.Context, obj *status.Object) (*status.Object, error) {
+func (l *RealLoader) Get(ctx context.Context, obj *status.Object) (*status.Object, error) {
 	ret, found := l.cache[obj.GetUID()]
 
 	if !found {
@@ -137,7 +137,7 @@ func (l *Loader) Get(ctx context.Context, obj *status.Object) (*status.Object, e
 //
 // We need to run the preloadQuery before the Eval method to support
 // searching for objects based on the ownership relations.
-func (l *Loader) Filter(ns string, matcher GroupKindMatcher) []*status.Object {
+func (l *RealLoader) Filter(ns string, matcher GroupKindMatcher) []*status.Object {
 	ret := []*status.Object{}
 	if ns == NamespaceAll {
 		for ns := range l.nsCache {
@@ -155,14 +155,14 @@ func (l *Loader) Filter(ns string, matcher GroupKindMatcher) []*status.Object {
 	return ret
 }
 
-func (l *Loader) reset() {
+func (l *RealLoader) Reset() {
 	clear(l.cache)
 	clear(l.ownership)
 	clear(l.nsCache)
 	clear(l.ownershipRefreshNs)
 }
 
-func (l *Loader) loadNamespace(ctx context.Context, ns string) error {
+func (l *RealLoader) loadNamespace(ctx context.Context, ns string) error {
 	var gksLoaded []schema.GroupKind
 	nsCache := l.getNsCache(ns)
 	for gk, _ := range nsCache.objects {
@@ -212,7 +212,7 @@ func (l *Loader) loadNamespace(ctx context.Context, ns string) error {
 	return nil
 }
 
-func (l *Loader) injest(unst *unstructured.Unstructured) (*status.Object, error) {
+func (l *RealLoader) injest(unst *unstructured.Unstructured) (*status.Object, error) {
 	obj, err := status.NewObjectFromUnstructured(unst)
 	if err != nil {
 		return nil, err
@@ -225,14 +225,14 @@ func (l *Loader) injest(unst *unstructured.Unstructured) (*status.Object, error)
 	return obj, nil
 }
 
-func (l *Loader) getNsCache(ns string) *nsCache {
+func (l *RealLoader) getNsCache(ns string) *nsCache {
 	if l.nsCache[ns] == nil {
 		l.nsCache[ns] = newNsCache()
 	}
 	return l.nsCache[ns]
 }
 
-func (l *Loader) filterOwnedBy(owner *status.Object, candidates []*status.Object) []*status.Object {
+func (l *RealLoader) filterOwnedBy(owner *status.Object, candidates []*status.Object) []*status.Object {
 	// Ensure the ownership relations are up-to-date.
 	l.refreshOwnership()
 
@@ -247,7 +247,7 @@ func (l *Loader) filterOwnedBy(owner *status.Object, candidates []*status.Object
 	return ret
 }
 
-func (l *Loader) refreshOwnership() {
+func (l *RealLoader) refreshOwnership() {
 	for _, ns := range l.ownershipRefreshNs {
 		for _, obj := range l.getNsCache(ns).getAll() {
 			for _, ownerRef := range obj.GetOwnerReferences() {

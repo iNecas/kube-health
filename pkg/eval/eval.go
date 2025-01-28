@@ -22,6 +22,19 @@ type Analyzer interface {
 // optionally pass an Evaluator reference to it.
 type AnalyzerInit func(*Evaluator) Analyzer
 
+// Interface to be implemented to support the evaluator.
+type Loader interface {
+	// Get loads a refreshed version of the objects.
+	// It might be cached still since the last Reset() call.
+	Get(context.Context, *status.Object) (*status.Object, error)
+
+	// Load evaluates the query based on the backend data.
+	Load(context.Context, QuerySpec) ([]*status.Object, error)
+
+	// Reset cleans internal cache, if any.
+	Reset()
+}
+
 // Evaluator is the entry structure for the status evaluation cycle.
 //
 // It peformes the following steps:
@@ -30,18 +43,13 @@ type AnalyzerInit func(*Evaluator) Analyzer
 //   - Evaluating the Analyzer on the object.
 type Evaluator struct {
 	analyzers      []Analyzer
-	loader         *Loader
+	loader         Loader
 	analyzersCache map[types.UID]Analyzer
 	ctx            context.Context
 }
 
 // NewEvaluator creates a new Evaluator instance.
-func NewEvaluator(ctx context.Context, analyzerInits []AnalyzerInit, config RESTClientGetter) (*Evaluator, error) {
-	loader, err := NewLoader(config)
-	if err != nil {
-		return nil, err
-	}
-
+func NewEvaluator(ctx context.Context, analyzerInits []AnalyzerInit, loader Loader) *Evaluator {
 	evaluator := &Evaluator{
 		loader:         loader,
 		analyzersCache: make(map[types.UID]Analyzer),
@@ -54,12 +62,12 @@ func NewEvaluator(ctx context.Context, analyzerInits []AnalyzerInit, config REST
 		analyzers = append(analyzers, init(evaluator))
 	}
 	evaluator.analyzers = analyzers
-	return evaluator, nil
+	return evaluator
 }
 
 // Reset clears the cache of the evaluator.
 func (e *Evaluator) Reset() {
-	e.loader.reset()
+	e.loader.Reset()
 }
 
 // Evaluates the status of the object. It gets the most recent version
