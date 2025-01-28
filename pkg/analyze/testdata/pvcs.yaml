@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: pvc1
+      namespace: default
+      uid: eea14f62-badc-4962-bc47-31089baf411b
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: sc-1
+      volumeMode: Filesystem
+      volumeName: pvc-eea14f62-badc-4962-bc47-31089baf411b
+    status:
+      accessModes:
+      - ReadWriteOnce
+      capacity:
+        storage: 1Gi
+      phase: Bound
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: pvc2
+      namespace: default
+      uid: d580bb69-c184-4d9b-a105-dc42106a9690
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: sc-1
+      volumeMode: Filesystem
+      volumeName: pvc-d580bb69-c184-4d9b-a105-dc42106a9690
+    status:
+      accessModes:
+      - ReadWriteOnce
+      capacity:
+        storage: 1Gi
+      phase: Available

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -98,10 +99,12 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 		ctx, cancelFunc := context.WithCancel(ctx)
 		defer cancelFunc()
 
-		evaluator, err := eval.NewEvaluator(ctx, analyze.DefaultAnalyzers(), f)
+		ldr, err := eval.NewRealLoader(f)
 		if err != nil {
-			return err
+			return fmt.Errorf("Can't create loader: %w", err)
 		}
+
+		evaluator := eval.NewEvaluator(ctx, analyze.DefaultAnalyzers(), ldr)
 
 		interval := time.Duration(fl.interval) * time.Second
 		poller := monitor.NewMonitorPoller(interval, evaluator, cfg)

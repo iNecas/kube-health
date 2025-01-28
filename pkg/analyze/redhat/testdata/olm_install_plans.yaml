@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: List
+metadata:
+  resourceVersion: ""
+items:
+- apiVersion: operators.coreos.com/v1alpha1
+  kind: InstallPlan
+  metadata:
+    creationTimestamp: "2025-01-13T10:50:14Z"
+    generateName: install-
+    generation: 1
+    labels:
+      operators.coreos.com/cluster-observability-operator.openshift-operators: ""
+    name: install-zvmlq
+    namespace: openshift-operators
+    ownerReferences:
+    - apiVersion: operators.coreos.com/v1alpha1
+      blockOwnerDeletion: false
+      controller: false
+      kind: Subscription
+      name: cluster-observability-operator
+      uid: 4847a1fa-beb8-4c72-9496-abecd82dcdc9
+    resourceVersion: "788877"
+    uid: 015ca6e6-b024-475e-a4f1-942360a61554
+  spec:
+    approval: Automatic
+    approved: true
+    clusterServiceVersionNames:
+    - cluster-observability-operator.0.4.1
+    generation: 1
+  status:
+    bundleLookups:
+    - catalogSourceRef:
+        name: redhat-operators
+        namespace: openshift-marketplace
+      identifier: cluster-observability-operator.0.4.1
+      path: registry.redhat.io/cluster-observability-operator/cluster-observability-operator-bundle@sha256:55ce1ea85a4099f326cae033a63e73c66d0a0d68b5f01c694ee7238b3bb8d79c
+      replaces: cluster-observability-operator.0.3.2
+    catalogSources:
+    - redhat-operators
+    conditions:
+    - lastTransitionTime: "2025-01-13T10:50:21Z"
+      lastUpdateTime: "2025-01-13T10:50:21Z"
+      status: "True"
+      type: Installed
+    phase: Complete
+    plan:
+    - resolving: cluster-observability-operator.0.4.1
+      resource:
+        group: operators.coreos.com
+        kind: ClusterServiceVersion
+        manifest: '{"kind":"ConfigMap","name":"654e1a2ea1828e62c0b8f05a19db303022805232295015fee572c6e82efe9e5","namespace":"openshift-marketplace","catalogSourceName":"redhat-operators","catalogSourceNamespace":"openshift-marketplace","replaces":"cluster-observability-operator.0.3.2","properties":"{\"properties\":[{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Alertmanager\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"AlertmanagerConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"MonitoringStack\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PodMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Probe\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Prometheus\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusAgent\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusRule\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ScrapeConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ServiceMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosQuerier\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosRuler\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"observability.openshift.io\",\"kind\":\"UIPlugin\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.package\",\"value\":{\"packageName\":\"cluster-observability-operator\",\"version\":\"0.4.1\"}}]}"}'
+        name: cluster-observability-operator.0.4.1
+        sourceName: redhat-operators
+        sourceNamespace: openshift-marketplace
+        version: v1alpha1
+      status: Present
+    - resolving: cluster-observability-operator.0.4.1
+      resource:
+        group: apiextensions.k8s.io
+        kind: CustomResourceDefinition
+        manifest: '{"kind":"ConfigMap","name":"654e1a2ea1828e62c0b8f05a19db303022805232295015fee572c6e82efe9e5","namespace":"openshift-marketplace","catalogSourceName":"redhat-operators","catalogSourceNamespace":"openshift-marketplace","replaces":"cluster-observability-operator.0.3.2","properties":"{\"properties\":[{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Alertmanager\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"AlertmanagerConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"MonitoringStack\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PodMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Probe\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Prometheus\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusAgent\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusRule\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ScrapeConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ServiceMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosQuerier\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosRuler\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"observability.openshift.io\",\"kind\":\"UIPlugin\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.package\",\"value\":{\"packageName\":\"cluster-observability-operator\",\"version\":\"0.4.1\"}}]}"}'
+        name: uiplugins.observability.openshift.io
+        sourceName: redhat-operators
+        sourceNamespace: openshift-marketplace
+        version: v1
+      status: Present
+    startTime: "2025-01-13T10:50:21Z"
+- apiVersion: operators.coreos.com/v1alpha1
+  kind: InstallPlan
+  metadata:
+    creationTimestamp: "2025-01-13T10:50:14Z"
+    generateName: install-
+    generation: 1
+    labels:
+      operators.coreos.com/cluster-observability-operator.openshift-operators: ""
+    name: ip3
+    namespace: openshift-operators
+    ownerReferences:
+    - apiVersion: operators.coreos.com/v1alpha1
+      blockOwnerDeletion: false
+      controller: false
+      kind: Subscription
+      name: cluster-observability-operator
+      uid: 4847a1fa-beb8-4c72-9496-abecd82dcdc9
+    resourceVersion: "788877"
+    uid: 015ca6e6-b024-475e-a4f1-942360a61554
+  spec:
+    approval: Automatic
+    approved: true
+    clusterServiceVersionNames:
+    - cluster-observability-operator.0.4.1
+    generation: 1
+  status:
+    bundleLookups:
+    - catalogSourceRef:
+        name: redhat-operators
+        namespace: openshift-marketplace
+      identifier: cluster-observability-operator.0.4.1
+      path: registry.redhat.io/cluster-observability-operator/cluster-observability-operator-bundle@sha256:55ce1ea85a4099f326cae033a63e73c66d0a0d68b5f01c694ee7238b3bb8d79c
+      replaces: cluster-observability-operator.0.3.2
+    catalogSources:
+    - redhat-operators
+    conditions:
+    - lastTransitionTime: "2025-01-13T10:50:21Z"
+      lastUpdateTime: "2025-01-13T10:50:21Z"
+      status: "True"
+      type: Installed
+    phase: Complete
+    plan:
+    - resolving: cluster-observability-operator.0.4.1
+      resource:
+        group: operators.coreos.com
+        kind: ClusterServiceVersion
+        manifest: '{"kind":"ConfigMap","name":"654e1a2ea1828e62c0b8f05a19db303022805232295015fee572c6e82efe9e5","namespace":"openshift-marketplace","catalogSourceName":"redhat-operators","catalogSourceNamespace":"openshift-marketplace","replaces":"cluster-observability-operator.0.3.2","properties":"{\"properties\":[{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Alertmanager\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"AlertmanagerConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"MonitoringStack\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PodMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Probe\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Prometheus\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusAgent\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusRule\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ScrapeConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ServiceMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosQuerier\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosRuler\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"observability.openshift.io\",\"kind\":\"UIPlugin\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.package\",\"value\":{\"packageName\":\"cluster-observability-operator\",\"version\":\"0.4.1\"}}]}"}'
+        name: cluster-observability-operator.0.4.1
+        sourceName: redhat-operators
+        sourceNamespace: openshift-marketplace
+        version: v1alpha1
+      status: Present
+    - resolving: cluster-observability-operator.0.4.1
+      resource:
+        group: apiextensions.k8s.io
+        kind: CustomResourceDefinition
+        manifest: '{"kind":"ConfigMap","name":"654e1a2ea1828e62c0b8f05a19db303022805232295015fee572c6e82efe9e5","namespace":"openshift-marketplace","catalogSourceName":"redhat-operators","catalogSourceNamespace":"openshift-marketplace","replaces":"cluster-observability-operator.0.3.2","properties":"{\"properties\":[{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Alertmanager\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"AlertmanagerConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"MonitoringStack\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PodMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Probe\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"Prometheus\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusAgent\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"PrometheusRule\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ScrapeConfig\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ServiceMonitor\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosQuerier\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"monitoring.rhobs\",\"kind\":\"ThanosRuler\",\"version\":\"v1\"}},{\"type\":\"olm.gvk\",\"value\":{\"group\":\"observability.openshift.io\",\"kind\":\"UIPlugin\",\"version\":\"v1alpha1\"}},{\"type\":\"olm.package\",\"value\":{\"packageName\":\"cluster-observability-operator\",\"version\":\"0.4.1\"}}]}"}'
+        name: uiplugins.observability.openshift.io
+        sourceName: redhat-operators
+        sourceNamespace: openshift-marketplace
+        version: v1
+      status: Present

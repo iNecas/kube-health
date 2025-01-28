@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      haproxy.router.openshift.io/timeout: 5m
+    labels:
+      app: r1
+    name: r1
+    namespace: default
+    uid: 0079264b-36a9-4997-b772-d65e828b3b1f
+  spec:
+    host: example.com
+    port:
+      targetPort: https
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: reencrypt
+    to:
+      kind: Service
+      name: console
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: "2025-01-06T20:11:49Z"
+        status: "True"
+        type: Admitted
+      host: example.com
+      routerCanonicalHostname: example.com
+      routerName: default
+      wildcardPolicy: None
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      haproxy.router.openshift.io/timeout: 5m
+    labels:
+      app: r2
+    name: r2
+    namespace: default
+    uid: d66ea447-d761-4f2a-8c22-2042ec73113b
+  spec:
+    host: example.com
+    port:
+      targetPort: https
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: reencrypt
+    to:
+      kind: Service
+      name: console
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: "2025-01-06T20:11:49Z"
+        status: "False"
+        type: Admitted
+      host: example.com
+      routerCanonicalHostname: example.com
+      routerName: default
+      wildcardPolicy: None

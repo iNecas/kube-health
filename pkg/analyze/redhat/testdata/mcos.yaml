@@ -1,0 +1,226 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+- apiVersion: machineconfiguration.openshift.io/v1
+  kind: MachineConfigPool
+  metadata:
+    creationTimestamp: "2025-01-06T19:54:54Z"
+    generation: 3
+    labels:
+      machineconfiguration.openshift.io/mco-built-in: ""
+      operator.machineconfiguration.openshift.io/required-for-upgrade: ""
+      pools.operator.machineconfiguration.openshift.io/master: ""
+    name: master
+    resourceVersion: "2769242"
+    uid: 65431352-f739-4ea9-aeb9-b90055b8d140
+  spec:
+    configuration:
+      name: rendered-master-cc1cd90801660f2821a37c6ca20ed60f
+      source:
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 00-master
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-master-container-runtime
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-master-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 97-master-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 98-master-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 99-master-generated-registries
+    machineConfigSelector:
+      matchLabels:
+        machineconfiguration.openshift.io/role: master
+    nodeSelector:
+      matchLabels:
+        node-role.kubernetes.io/master: ""
+    paused: false
+  status:
+    certExpirys:
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2035-01-04T19:41:39Z"
+      subject: CN=admin-kubeconfig-signer,OU=openshift
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-03-08T16:18:09Z"
+      subject: CN=openshift-kube-controller-manager-operator_csr-signer-signer@1736266689
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-02-21T16:18:49Z"
+      subject: CN=kube-csr-signer_@1737562729
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-03-12T08:24:37Z"
+      subject: CN=kube-csr-signer_@1739175877
+    conditions:
+    - lastTransitionTime: "2025-01-06T19:55:07Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: RenderDegraded
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: NodeDegraded
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: Degraded
+    - lastTransitionTime: "2025-02-07T15:52:34Z"
+      message: All nodes are updated
+      reason: ""
+      status: "True"
+      type: Updated
+    - lastTransitionTime: "2025-02-07T15:52:34Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: Updating
+    configuration:
+      name: rendered-master-cc1cd90801660f2821a37c6ca20ed60f
+      source:
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 00-master
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-master-container-runtime
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-master-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 97-master-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 98-master-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 99-master-generated-registries
+    degradedMachineCount: 0
+    machineCount: 1
+    observedGeneration: 3
+    readyMachineCount: 1
+    unavailableMachineCount: 0
+    updatedMachineCount: 1
+- apiVersion: machineconfiguration.openshift.io/v1
+  kind: MachineConfigPool
+  metadata:
+    creationTimestamp: "2025-01-06T19:54:54Z"
+    generation: 3
+    labels:
+      machineconfiguration.openshift.io/mco-built-in: ""
+      pools.operator.machineconfiguration.openshift.io/worker: ""
+    name: worker
+    resourceVersion: "2769243"
+    uid: b32d92d5-15a1-4181-a62a-29208da54114
+  spec:
+    configuration:
+      name: rendered-worker-130f4b20a3977cd389289c0e8ac028ec
+      source:
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 00-worker
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-worker-container-runtime
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-worker-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 97-worker-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 98-worker-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 99-worker-generated-registries
+    machineConfigSelector:
+      matchLabels:
+        machineconfiguration.openshift.io/role: worker
+    nodeSelector:
+      matchLabels:
+        node-role.kubernetes.io/worker: ""
+    paused: false
+  status:
+    certExpirys:
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2035-01-04T19:41:39Z"
+      subject: CN=admin-kubeconfig-signer,OU=openshift
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-03-08T16:18:09Z"
+      subject: CN=openshift-kube-controller-manager-operator_csr-signer-signer@1736266689
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-02-21T16:18:49Z"
+      subject: CN=kube-csr-signer_@1737562729
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-03-12T08:24:37Z"
+      subject: CN=kube-csr-signer_@1739175877
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2025-04-08T15:52:44Z"
+      subject: CN=openshift-kube-controller-manager-operator_csr-signer-signer@1738943564
+    - bundle: KubeAPIServerServingCAData
+      expiry: "2026-01-06T19:41:41Z"
+      subject: CN=kube-apiserver-to-kubelet-signer,OU=openshift
+    - bundle: KubeAPIServerServingCAData
+    conditions:
+    - lastTransitionTime: "2025-01-06T19:55:08Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: RenderDegraded
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: Updating
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: ""
+      reason: ""
+      status: "False"
+      type: NodeDegraded
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: "Pool failed updating"
+      reason: "ErrPoolDegraded"
+      status: "True"
+      type: Degraded
+    - lastTransitionTime: "2025-01-06T19:55:12Z"
+      message: All nodes are updated
+      reason: ""
+      status: "True"
+      type: Updated
+    configuration:
+      name: rendered-worker-130f4b20a3977cd389289c0e8ac028ec
+      source:
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 00-worker
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-worker-container-runtime
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 01-worker-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 97-worker-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 98-worker-generated-kubelet
+      - apiVersion: machineconfiguration.openshift.io/v1
+        kind: MachineConfig
+        name: 99-worker-generated-registries
+    degradedMachineCount: 0
+    machineCount: 0
+    observedGeneration: 3
+    readyMachineCount: 0
+    unavailableMachineCount: 0
+    updatedMachineCount: 0
