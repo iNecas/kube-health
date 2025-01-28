@@ -30,12 +30,11 @@ var (
 	// CommonConditionsAnalyzer is a generic condition analyzer that can be used
 	// for any condition type. It's one of the default analyzers.
 	CommonConditionsAnalyzer = GenericConditionAnalyzer{
-		MatchAll:   true,
 		Conditions: NewStringMatchers("Ready"),
 		ReversedPolarityConditions: append(NewRegexpMatchers("Degraded", "Pressure", "Detected"),
 			NewStringMatchers("Progressing")...),
 		ProgressingConditions: NewStringMatchers("Progressing"),
-		WarningConditions:     NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+		WarningConditions:     NewRegexpMatchers("Pressure", "Detected"),
 		UnknownConditions:     NewRegexpMatchers("Disabled"),
 	}
 
@@ -97,7 +96,6 @@ func NewRegexpMatchers(patterns ...string) []Matcher {
 // `UnknownConditions` or `ProgressingConditions`, in which case the corresponding
 // status is set.
 type GenericConditionAnalyzer struct {
-	MatchAll                   bool
 	Conditions                 []Matcher
 	ReversedPolarityConditions []Matcher
 	WarningConditions          []Matcher
@@ -109,10 +107,6 @@ func (a GenericConditionAnalyzer) match(condType string) (match, reverse, progre
 	match = false
 	result = status.Unknown
 	progressing = false
-
-	if a.MatchAll {
-		match = true
-	}
 
 	for _, t := range a.Conditions {
 		if t.Match(condType) {

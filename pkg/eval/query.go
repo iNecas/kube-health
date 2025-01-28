@@ -39,7 +39,7 @@ type QuerySpec interface {
 	// If applicable, the loader is already preloaded with the objects based
 	// on the GroupKindMatcher and Namespace. It's still the repsonsibility
 	// of the Eval method to do the final filtering.
-	Eval(l *Loader) []*status.Object
+	Eval(e *Evaluator) []*status.Object
 }
 
 // GroupKindMatcher allows specifying a set of kinds to match.
@@ -187,8 +187,8 @@ func (qs KindQuerySpec) GroupKindMatcher() GroupKindMatcher {
 	return qs.GK
 }
 
-func (qs KindQuerySpec) Eval(l *Loader) []*status.Object {
-	return l.Filter(qs.Namespace(), qs.GK)
+func (qs KindQuerySpec) Eval(e *Evaluator) []*status.Object {
+	return e.Filter(qs.Namespace(), qs.GK)
 }
 
 // OwnerQuerySpec is a query that returns objects owned by the specified object.
@@ -211,9 +211,9 @@ func (qs OwnerQuerySpec) GroupKindMatcher() GroupKindMatcher {
 	return qs.GK
 }
 
-func (qs OwnerQuerySpec) Eval(l *Loader) []*status.Object {
-	candidates := l.Filter(qs.Namespace(), qs.GK)
-	return l.filterOwnedBy(qs.Object, candidates)
+func (qs OwnerQuerySpec) Eval(e *Evaluator) []*status.Object {
+	candidates := e.Filter(qs.Namespace(), qs.GK)
+	return e.filterOwnedBy(qs.Object, candidates)
 }
 
 // labelSelectorMode specifies the mode of the label selector.
@@ -248,8 +248,8 @@ func (qs LabelQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs LabelQuerySpec) Eval(l *Loader) []*status.Object {
-	candidates := l.Filter(qs.Object.GetNamespace(), qs.GK)
+func (qs LabelQuerySpec) Eval(e *Evaluator) []*status.Object {
+	candidates := e.Filter(qs.Object.GetNamespace(), qs.GK)
 	var ret []*status.Object
 	if qs.Selector == nil {
 		return ret
@@ -336,8 +336,8 @@ func (qs RefQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs RefQuerySpec) Eval(l *Loader) []*status.Object {
-	candidates := l.Filter(qs.Object.GetNamespace(), qs.GroupKindMatcher())
+func (qs RefQuerySpec) Eval(e *Evaluator) []*status.Object {
+	candidates := e.Filter(qs.Object.GetNamespace(), qs.GroupKindMatcher())
 	var ret []*status.Object
 
 	for _, cand := range candidates {
@@ -365,9 +365,9 @@ func (qs PodLogQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs PodLogQuerySpec) Eval(l *Loader) []*status.Object {
+func (qs PodLogQuerySpec) Eval(e *Evaluator) []*status.Object {
 	data := make(map[string]interface{}, 1)
-	logs, err := l.client.podLogs(qs.Object, qs.Container, 5)
+	logs, err := e.loader.LoadPodLogs(e.ctx, qs.Object, qs.Container, 5)
 	if err != nil {
 		klog.V(4).ErrorS(err, "Failed to get logs", "object", qs.Object)
 	} else {

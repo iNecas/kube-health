@@ -1,0 +1,83 @@
+kind: List
+apiVersion: v1
+metadata:
+  resourceVersion: ""
+items:
+- apiVersion: operators.coreos.com/v1alpha1
+  kind: ClusterServiceVersion
+  metadata:
+    creationTimestamp: "2025-01-13T10:50:15Z"
+    generation: 1
+    name: op3.0.4.1
+    namespace: openshift-operators
+    resourceVersion: "2766969"
+    uid: 419c3322-2172-4d5d-92e4-9aeb0fdfc3ab
+  spec:
+    apiservicedefinitions: {}
+    cleanup:
+      enabled: false
+    customresourcedefinitions:
+    displayName: op3
+  status:
+    certsLastUpdated: "2025-01-13T10:50:21Z"
+    certsRotateAt: "2027-01-12T10:50:21Z"
+    cleanup: {}
+    conditions:
+    - lastTransitionTime: "2025-02-04T11:27:56Z"
+      lastUpdateTime: "2025-02-04T11:27:56Z"
+      message: waiting for install components to report healthy
+      phase: Installing
+      reason: InstallSucceeded
+    - lastTransitionTime: "2025-02-04T11:28:01Z"
+      lastUpdateTime: "2025-02-04T11:28:01Z"
+      message: install strategy completed with no errors
+      phase: Succeeded
+      reason: InstallSucceeded
+    - lastTransitionTime: "2025-02-05T08:52:20Z"
+      lastUpdateTime: "2025-02-05T08:52:20Z"
+      message: 'installing: waiting for deployment obo-prometheus-operator-admission-webhook
+        to become ready: deployment "obo-prometheus-operator-admission-webhook" not
+        available: Deployment does not have minimum availability.'
+      phase: Failed
+      reason: ComponentUnhealthy
+    - lastTransitionTime: "2025-02-05T08:52:21Z"
+      lastUpdateTime: "2025-02-05T08:52:21Z"
+      message: 'installing: waiting for deployment obo-prometheus-operator-admission-webhook
+        to become ready: deployment "obo-prometheus-operator-admission-webhook" not
+        available: Deployment does not have minimum availability.'
+      phase: Pending
+      reason: NeedsReinstall
+    - lastTransitionTime: "2025-02-05T08:52:21Z"
+      lastUpdateTime: "2025-02-05T08:52:21Z"
+      message: all requirements found, attempting install
+      phase: InstallReady
+      reason: AllRequirementsMet
+    - lastTransitionTime: "2025-02-05T08:52:22Z"
+      lastUpdateTime: "2025-02-05T08:52:22Z"
+      message: waiting for install components to report healthy
+      phase: Installing
+      reason: InstallSucceeded
+    - lastTransitionTime: "2025-02-05T08:52:22Z"
+      lastUpdateTime: "2025-02-05T08:52:24Z"
+      message: 'installing: waiting for deployment obo-prometheus-operator to become
+        ready: waiting for spec update of deployment "obo-prometheus-operator" to
+        be observed...'
+      phase: Installing
+      reason: InstallWaiting
+    - lastTransitionTime: "2025-02-05T08:52:56Z"
+      lastUpdateTime: "2025-02-05T08:52:56Z"
+      message: install strategy completed with no errors
+      phase: Succeeded
+      reason: InstallSucceeded
+    - lastTransitionTime: "2025-02-07T15:47:14Z"
+      lastUpdateTime: "2025-02-07T15:47:14Z"
+      message: 'installing: waiting for deployment observability-operator to become
+        ready: deployment "observability-operator" not available: Deployment does
+        not have minimum availability.'
+      phase: Failed
+      reason: ComponentUnhealthy
+    lastTransitionTime: "2025-02-10T08:19:11Z"
+    lastUpdateTime: "2025-02-10T08:19:11Z"
+    message: 'installing: waiting for deployment to become ready'
+    phase: Failed
+    reason: ComponentUnhealthy

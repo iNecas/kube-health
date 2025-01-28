@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: s1
+      namespace: default
+      uid: 4bdab464-8463-4909-91f9-3b7cbdd7c24d
+    spec:
+      clusterIP: None
+      clusterIPs:
+      - None
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+      - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+      - name: http
+        port: 9095
+        protocol: TCP
+        targetPort: 9095
+      selector:
+        app: p1
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: s2
+      namespace: default
+      uid: 8b7e567f-0ec7-4d4b-9cd3-78503fa9b337
+    spec:
+      clusterIP: None
+      clusterIPs:
+      - None
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+      - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+      - name: http
+        port: 9095
+        protocol: TCP
+        targetPort: 9095
+      selector:
+        app: p2
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}

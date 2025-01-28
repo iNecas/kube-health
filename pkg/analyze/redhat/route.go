@@ -36,7 +36,10 @@ func (_ RouteAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
 		data, found, _ := unstructured.NestedSlice(ingress, "conditions")
 
 		if found {
-			c, err := analyze.AnalyzeRawConditions(data, analyze.DefaultConditionAnalyzers)
+			c, err := analyze.AnalyzeRawConditions(data,
+				[]analyze.ConditionAnalyzer{analyze.GenericConditionAnalyzer{
+					Conditions: analyze.NewStringMatchers("Admitted"),
+				}})
 			if err != nil {
 				return status.UnknownStatusWithError(obj, err)
 			}

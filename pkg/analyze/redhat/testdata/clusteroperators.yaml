@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: config.openshift.io/v1
+  kind: ClusterOperator
+  metadata:
+    creationTimestamp: "2024-10-03T18:23:48Z"
+    generation: 1
+    name: baremetal
+    uid: 92039c1e-5f57-43f3-9cda-0f46d2803758
+  spec: {}
+  status:
+    conditions:
+    - lastTransitionTime: "2024-10-03T18:27:27Z"
+      reason: WaitingForProvisioningCR
+      status: "False"
+      type: Progressing
+    - lastTransitionTime: "2024-10-03T18:27:27Z"
+      status: "False"
+      type: Degraded
+    - lastTransitionTime: "2024-10-03T18:27:27Z"
+      message: Waiting for Provisioning CR
+      reason: WaitingForProvisioningCR
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2024-10-03T18:27:27Z"
+      status: "True"
+      type: Upgradeable
+    - lastTransitionTime: "2024-10-03T18:27:27Z"
+      status: "False"
+      type: Disabled
+    extension: null
+- apiVersion: config.openshift.io/v1
+  kind: ClusterOperator
+  metadata:
+    creationTimestamp: "2024-10-03T18:23:48Z"
+    generation: 1
+    name: authentication
+    uid: 03a33f27-1649-4c3e-876a-059355ffc2a1
+  spec: {}
+  status:
+    conditions:
+    - lastTransitionTime: "2024-11-20T12:59:02Z"
+      message: OAuthRouteCheckEndpointAccessibleControllerDegraded
+      reason: OAuthRouteCheckEndpointAccessibleController_SyncError
+      status: "True"
+      type: Degraded
+    - lastTransitionTime: "2024-10-04T12:27:57Z"
+      message: 'AuthenticatorCertKeyProgressing: All is well'
+      reason: AsExpected
+      status: "False"
+      type: Progressing
+    - lastTransitionTime: "2024-12-11T12:43:09Z"
+      message: The service is not available
+      reason: NotAvailable
+      status: "False"
+      type: Available
+    - lastTransitionTime: "2024-10-03T18:26:57Z"
+      message: All is well
+      reason: AsExpected
+      status: "True"
+      type: Upgradeable
+    - lastTransitionTime: "2024-10-03T18:26:57Z"
+      reason: NoData
+      status: Unknown
+      type: EvaluationConditionsDetected
+    extension: null

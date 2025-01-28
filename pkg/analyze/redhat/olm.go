@@ -80,7 +80,7 @@ func (a OLMSubscriptionAnalyzer) AnalyzeInstallPlans(obj *status.Object) []statu
 	installPlans, err := a.e.EvalQuery(eval.RefQuerySpec{
 		Object:    obj,
 		RefObject: objRef,
-	}, nil)
+	}, OLMInstallPlanAnalyzer{})
 
 	if err != nil {
 		klog.V(5).ErrorS(err, "Failed to evaluate install plan dependency", "object", obj)
@@ -120,17 +120,35 @@ func (a OLMSubscriptionAnalyzer) AnalyzeCSV(obj *status.Object) []status.ObjectS
 	return csv
 }
 
+type OLMInstallPlanAnalyzer struct{}
+
+// not really needed, as we call the analyzer explicitly
+func (_ OLMInstallPlanAnalyzer) Supports(obj *status.Object) bool {
+	return obj.GroupVersionKind().GroupKind() == gkOLMInstallPlan
+}
+
+func (_ OLMInstallPlanAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+	conditions, err := analyze.AnalyzeObjectConditions(obj, []analyze.ConditionAnalyzer{
+		analyze.GenericConditionAnalyzer{
+			Conditions: analyze.NewStringMatchers("Installed"),
+		}})
+
+	if err != nil {
+		return status.UnknownStatusWithError(obj, err)
+	}
+
+	return analyze.AggregateResult(obj, nil, conditions)
+}
+
 type OLMCSVAnalyzer struct{}
 
-// TODO: Supports should not be needed for analyzers not registered in the evaluator.
+// not really needed, as we call the analyzer explicitly
 func (_ OLMCSVAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkOLMCSV
 }
 
 func (_ OLMCSVAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	var conditions []*metav1.Condition
-
-	conditionsData, found, err := unstructured.NestedSlice(obj.Unstructured.Object, "status", "conditions")
+	statusData, found, err := unstructured.NestedMap(obj.Unstructured.Object, "status")
 	if err != nil {
 		return status.UnknownStatusWithError(obj, err)
 	}
@@ -138,28 +156,17 @@ func (_ OLMCSVAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
 		return status.UnknownStatus(obj)
 	}
 
-	for _, condData := range conditionsData {
-		cond, ok := condData.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		condition := metav1.Condition{}
-		err := analyze.FromUnstructured(cond, &condition)
-		if err != nil {
-			return status.UnknownStatusWithError(obj, err)
-		}
-
-		// OLM CSVs use "phase" instead of "type" for condition type, we convert it here.
-		phase, found, _ := unstructured.NestedString(cond, "phase")
-		if found {
-			condition.Type = phase
-		}
-
-		conditions = append(conditions, &condition)
+	condition := metav1.Condition{}
+	err = analyze.FromUnstructured(statusData, &condition)
+	if err != nil {
+		return status.UnknownStatusWithError(obj, err)
+	}
+	phase, found, _ := unstructured.NestedString(statusData, "phase")
+	if found {
+		condition.Type = phase
 	}
 
-	conditionsStatuses := analyze.AnalyzeConditions(conditions,
+	conditionsStatuses := analyze.AnalyzeConditions([]*metav1.Condition{&condition},
 		[]analyze.ConditionAnalyzer{olmCSVConditionAnalyzer{}})
 	if err != nil {
 		return status.UnknownStatusWithError(obj, err)
