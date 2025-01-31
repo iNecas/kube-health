@@ -84,6 +84,7 @@ items:
       phase: Running
       containerStatuses:
       - containerID: cri-o://95d84f9ead76da5496d193cb159de9e583f7189deaf9f89dce1f1038f52470ec
+        name: p2c
         image: example.com/example-image/123
         imageID: example.com/example-image/123
         ready: false

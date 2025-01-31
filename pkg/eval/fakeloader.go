@@ -16,12 +16,15 @@ import (
 type FakeLoader struct {
 	cache   map[types.UID]*status.Object
 	nsCache map[string]*nsCache
+	podLogs map[string]string
 }
 
 func NewFakeLoader() *FakeLoader {
-	cache := make(map[types.UID]*status.Object)
-	nsCache := make(map[string]*nsCache)
-	return &FakeLoader{cache: cache, nsCache: nsCache}
+	return &FakeLoader{
+		cache:   make(map[types.UID]*status.Object),
+		nsCache: make(map[string]*nsCache),
+		podLogs: make(map[string]string),
+	}
 }
 
 func (l *FakeLoader) Load(ctx context.Context, ns string, matcher GroupKindMatcher, exclude []schema.GroupKind) ([]*status.Object, error) {
@@ -31,9 +34,8 @@ func (l *FakeLoader) Load(ctx context.Context, ns string, matcher GroupKindMatch
 }
 
 func (l *FakeLoader) LoadPodLogs(ctx context.Context, obj *status.Object, container string, tailLines int64) ([]byte, error) {
-	fmt.Printf("loading logs obj = %#v, container: %#v, tailslines %#v\n", obj, container, tailLines)
-	// TODO: finish pod logs loading
-	return nil, nil
+	logs := l.podLogs[fmt.Sprintf("%s-%s-%s", obj.Namespace, obj.Name, container)]
+	return []byte(logs), nil
 }
 
 func (l *FakeLoader) Get(ctx context.Context, obj *status.Object) (*status.Object, error) {
@@ -63,6 +65,10 @@ func (l *FakeLoader) Register(objects ...unstructured.Unstructured) ([]*status.O
 		ret = append(ret, o)
 	}
 	return ret, nil
+}
+
+func (f *FakeLoader) RegisterPodLogs(namespace, pod, container, logs string) {
+	f.podLogs[fmt.Sprintf("%s-%s-%s", namespace, pod, container)] = logs
 }
 
 func (l *FakeLoader) getNsCache(ns string) *nsCache {
