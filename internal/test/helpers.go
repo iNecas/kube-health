@@ -61,3 +61,15 @@ func AssertConditions(t *testing.T, expected string, conditions []status.Conditi
 	}
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(msgs))
 }
+
+func AssertStr(t *testing.T, expected, actual string) {
+	assert.Equal(t, trimLines(expected), trimLines(actual))
+}
+
+func trimLines(str string) string {
+	var lines []string
+	for _, l := range strings.Split(str, "\n") {
+		lines = append(lines, strings.TrimRight(l, " "))
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
+}

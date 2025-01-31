@@ -58,6 +58,11 @@ items:
       namespace: default
       labels:
         app: test2
+      ownerReferences:
+      - apiVersion: apps/v1
+        controller: true
+        kind: ReplicaSet
+        name: rs2
     spec:
       serviceAccountName: sa2
     status:
