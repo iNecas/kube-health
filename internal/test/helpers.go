@@ -2,11 +2,15 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"testing"
 
 	"github.com/inecas/kube-health/pkg/analyze"
 	"github.com/inecas/kube-health/pkg/status"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
@@ -48,4 +52,12 @@ func RegisterTestData(loader *eval.FakeLoader, file string) []*status.Object {
 		panic(err)
 	}
 	return objs
+}
+
+func AssertConditions(t *testing.T, expected string, conditions []status.ConditionStatus) {
+	msgs := ""
+	for _, c := range conditions {
+		msgs += fmt.Sprintf("%s %s %s (%s)\n", c.Type, c.Reason, c.Message, c.CondStatus.Result.String())
+	}
+	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(msgs))
 }

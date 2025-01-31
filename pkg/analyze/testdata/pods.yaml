@@ -60,6 +60,40 @@ items:
         app: test2
     spec:
       serviceAccountName: sa2
+    status:
+      conditions:
+      - lastTransitionTime: "2025-01-28T13:09:45Z"
+        status: "True"
+        type: PodReadyToStartContainers
+      - lastTransitionTime: "2025-01-28T13:09:42Z"
+        status: "True"
+        type: Initialized
+      - lastTransitionTime: "2025-01-28T13:09:42Z"
+        message: 'containers with unready status: [p2c]'
+        reason: ContainersNotReady
+        status: "False"
+        type: Ready
+      - lastTransitionTime: "2025-01-28T13:09:42Z"
+        message: 'containers with unready status: [p2c]'
+        reason: ContainersNotReady
+        status: "False"
+        type: ContainersReady
+      - lastTransitionTime: "2025-01-28T13:09:42Z"
+        status: "True"
+        type: PodScheduled
+      phase: Running
+      containerStatuses:
+      - containerID: cri-o://95d84f9ead76da5496d193cb159de9e583f7189deaf9f89dce1f1038f52470ec
+        image: example.com/example-image/123
+        imageID: example.com/example-image/123
+        ready: false
+        restartCount: 34
+        started: false
+        state:
+          waiting:
+            message: back-off 5m0s restarting failed container=p2c pod=nginx-c49474db8-k68f8_demo(dbb012fe-0f27-4166-b805-f5ae012fe70a)
+            reason: CrashLoopBackOff
+            phase: Running
   - apiVersion: v1
     kind: Pod
     metadata:
@@ -105,6 +139,7 @@ items:
         - status: "False"
           type: PodScheduled
       phase: Running
+
   - apiVersion: v1
     kind: Pod
     metadata:
