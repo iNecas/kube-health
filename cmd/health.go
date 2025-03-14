@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,7 +39,7 @@ func Execute() {
 	flags := newFlags()
 
 	cmd := &cobra.Command{
-		Use:          "kube-health",
+		Use:          execName(),
 		Short:        "Monitor Kubernetes resource health",
 		SilenceUsage: true,
 		RunE:         runFunc(flags),
@@ -49,6 +50,13 @@ func Execute() {
 		os.Exit(128)
 	}
 	os.Exit(exitCode)
+}
+
+func execName() string {
+	if strings.HasPrefix(filepath.Base(os.Args[0]), "kubectl-") {
+		return "kubectl health"
+	}
+	return "kube-health"
 }
 
 type flags struct {
