@@ -32,7 +32,20 @@ builds:
     main: ./cmd/monitor
 
 archives:
-  - format: tar.gz
+  - id: kube-health
+    formats: tar.gz
+    builds: [kube-health]
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .Binary }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+  - id: kube-health-monitor
+    formats: tar.gz
+    builds: [kube-health-monitor]
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .Binary }}_
