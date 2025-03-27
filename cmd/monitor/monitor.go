@@ -104,7 +104,7 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("Can't create loader: %w", err)
 		}
 
-		evaluator := eval.NewEvaluator(ctx, analyze.DefaultAnalyzers(), ldr)
+		evaluator := eval.NewEvaluator(analyze.DefaultAnalyzers(), ldr)
 
 		interval := time.Duration(fl.interval) * time.Second
 		poller := monitor.NewMonitorPoller(interval, evaluator, cfg)

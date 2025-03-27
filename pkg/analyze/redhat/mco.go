@@ -2,6 +2,8 @@ package redhat
 
 // mco.go implements an analyzer for MultiClusterObservability objects.
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/inecas/kube-health/pkg/analyze"
@@ -23,12 +25,12 @@ func (_ MCOAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkMCO
 }
 
-func (a MCOAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (a MCOAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	// We need to specify the namespace explicitly, as the MCO object
 	// is namespace-less.
 	ds := analyze.GenericOwnerQuerySpec(obj)
 	ds.NamespaceOverride = &mcoNs
-	subStatuses, err := a.e.EvalQuery(ds, nil)
+	subStatuses, err := a.e.EvalQuery(ctx, ds, nil)
 
 	conditions, err := analyze.AnalyzeObjectConditions(obj, analyze.DefaultConditionAnalyzers)
 

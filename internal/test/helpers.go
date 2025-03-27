@@ -1,7 +1,6 @@
 package test
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,7 +36,7 @@ func TestEvaluator(testdata ...string) (*eval.Evaluator, *eval.FakeLoader, []*st
 		objs = append(objs, RegisterTestData(loader, t)...)
 	}
 
-	evaluator := eval.NewEvaluator(context.Background(), analyze.DefaultAnalyzers(), loader)
+	evaluator := eval.NewEvaluator(analyze.DefaultAnalyzers(), loader)
 	return evaluator, loader, objs
 }
 

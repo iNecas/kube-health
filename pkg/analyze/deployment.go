@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"slices"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,8 +22,8 @@ func (_ DeploymentAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkDeployment
 }
 
-func (a DeploymentAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	subStatuses, err := a.e.EvalQuery(
+func (a DeploymentAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	subStatuses, err := a.e.EvalQuery(ctx,
 		eval.NewSelectorLabelQuerySpec(obj, gkReplicaSet), ReplicaSetAnalyzer{e: a.e})
 
 	if err != nil {

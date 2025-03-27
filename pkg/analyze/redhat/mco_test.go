@@ -1,6 +1,7 @@
 package redhat_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/inecas/kube-health/pkg/status"
@@ -14,7 +15,7 @@ func TestMcoAnalyzer(t *testing.T) {
 
 	e, _, objs := test.TestEvaluator("mcos.yaml")
 
-	os = e.Eval(objs[0])
+	os = e.Eval(context.Background(), objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 	test.AssertConditions(t, `
@@ -25,7 +26,7 @@ Updated  All nodes are updated (Unknown)
 Updating   (Unknown)
 `, os.Conditions)
 
-	os = e.Eval(objs[1])
+	os = e.Eval(context.Background(), objs[1])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 

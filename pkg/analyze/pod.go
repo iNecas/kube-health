@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func (_ PodAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkPod
 }
 
-func (a PodAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (a PodAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	conditions, err := AnalyzeObjectConditions(obj, DefaultConditionAnalyzers)
 	if err != nil {
 		return status.UnknownStatusWithError(obj, err)
@@ -41,7 +42,7 @@ func (a PodAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
 	// We treat the containers as sub-objects of the pod, even though technically
 	// they are just fields of the pod object. This makes it easier to report
 	// details of each container separately.
-	containerStatuses := a.analyzePodContainers(obj, &pod)
+	containerStatuses := a.analyzePodContainers(ctx, obj, &pod)
 
 	return AggregateResult(obj, containerStatuses, conditions)
 }
@@ -59,11 +60,11 @@ func podSyntheticConditions(pod *corev1.Pod) []status.ConditionStatus {
 	return conditions
 }
 
-func (a PodAnalyzer) analyzePodContainers(obj *status.Object, pod *corev1.Pod) []status.ObjectStatus {
+func (a PodAnalyzer) analyzePodContainers(ctx context.Context, obj *status.Object, pod *corev1.Pod) []status.ObjectStatus {
 	var ret []status.ObjectStatus
 
 	for _, cs := range pod.Status.ContainerStatuses {
-		containerObjStatus := a.analyzeContainer(obj, cs)
+		containerObjStatus := a.analyzeContainer(ctx, obj, cs)
 		if containerObjStatus.Object != nil {
 			ret = append(ret, containerObjStatus)
 		}
@@ -74,7 +75,7 @@ func (a PodAnalyzer) analyzePodContainers(obj *status.Object, pod *corev1.Pod) [
 
 // analyzeContainer analyzes the status of a container, treating it as a separate
 // sub-object of the pod.
-func (a PodAnalyzer) analyzeContainer(obj *status.Object, cs corev1.ContainerStatus) status.ObjectStatus {
+func (a PodAnalyzer) analyzeContainer(ctx context.Context, obj *status.Object, cs corev1.ContainerStatus) status.ObjectStatus {
 	containerObj := &status.Object{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Container",
@@ -121,7 +122,7 @@ func (a PodAnalyzer) analyzeContainer(obj *status.Object, cs corev1.ContainerSta
 	}
 
 	if cond.Status().Result > status.Ok {
-		a.expandWithLogs(obj, cs.Name, &cond)
+		a.expandWithLogs(ctx, obj, cs.Name, &cond)
 	}
 
 	conditions = append(conditions, cond)
@@ -130,8 +131,8 @@ func (a PodAnalyzer) analyzeContainer(obj *status.Object, cs corev1.ContainerSta
 }
 
 // expandWithLogs loads container logs and appends them to the condition message.
-func (a PodAnalyzer) expandWithLogs(obj *status.Object, container string, cond *status.ConditionStatus) {
-	logs, err := a.loadContainerLogs(obj, container)
+func (a PodAnalyzer) expandWithLogs(ctx context.Context, obj *status.Object, container string, cond *status.ConditionStatus) {
+	logs, err := a.loadContainerLogs(ctx, obj, container)
 	if err != nil {
 		logs = "Error loading logs: " + err.Error() + "\n"
 	}
@@ -148,8 +149,8 @@ func (a PodAnalyzer) expandWithLogs(obj *status.Object, container string, cond *
 	cond.Message += logs
 }
 
-func (a PodAnalyzer) loadContainerLogs(obj *status.Object, container string) (string, error) {
-	logobjs, err := a.e.Load(eval.PodLogQuerySpec{
+func (a PodAnalyzer) loadContainerLogs(ctx context.Context, obj *status.Object, container string) (string, error) {
+	logobjs, err := a.e.Load(ctx, eval.PodLogQuerySpec{
 		Object:    obj,
 		Container: container,
 	})

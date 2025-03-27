@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"fmt"
 	"slices"
 
@@ -142,7 +143,7 @@ func (a AlwaysGreenAnalyzer) Supports(obj *status.Object) bool {
 	return slices.Contains(a.Kinds, obj.GroupVersionKind().GroupKind())
 }
 
-func (a AlwaysGreenAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (a AlwaysGreenAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	return status.OkStatus(obj, nil)
 }
 

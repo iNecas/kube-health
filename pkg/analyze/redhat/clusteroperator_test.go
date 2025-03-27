@@ -1,6 +1,7 @@
 package redhat_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/inecas/kube-health/pkg/status"
@@ -14,7 +15,7 @@ func TestClusterOperatorAnalyzer(t *testing.T) {
 
 	e, _, objs := test.TestEvaluator("clusteroperators.yaml")
 
-	os = e.Eval(objs[0])
+	os = e.Eval(context.Background(), objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 	test.AssertConditions(t, `
@@ -24,7 +25,7 @@ Available WaitingForProvisioningCR Waiting for Provisioning CR (Ok)
 Upgradeable   (Unknown)
 Disabled   (Unknown)`, os.Conditions)
 
-	os = e.Eval(objs[1])
+	os = e.Eval(context.Background(), objs[1])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 
