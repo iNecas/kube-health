@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,8 +23,8 @@ func (a *GenericAnalyzer) Supports(obj *status.Object) bool {
 	return true
 }
 
-func (a *GenericAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	subStatuses, err := a.e.EvalQuery(GenericOwnerQuerySpec(obj), nil)
+func (a *GenericAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	subStatuses, err := a.e.EvalQuery(ctx, GenericOwnerQuerySpec(obj), nil)
 	if err != nil {
 		return status.UnknownStatusWithError(obj, err)
 	}

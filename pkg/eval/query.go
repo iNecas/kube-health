@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"context"
 	"encoding/json"
 	"slices"
 
@@ -39,7 +40,7 @@ type QuerySpec interface {
 	// If applicable, the loader is already preloaded with the objects based
 	// on the GroupKindMatcher and Namespace. It's still the repsonsibility
 	// of the Eval method to do the final filtering.
-	Eval(e *Evaluator) []*status.Object
+	Eval(ctx context.Context, e *Evaluator) []*status.Object
 }
 
 // GroupKindMatcher allows specifying a set of kinds to match.
@@ -187,7 +188,7 @@ func (qs KindQuerySpec) GroupKindMatcher() GroupKindMatcher {
 	return qs.GK
 }
 
-func (qs KindQuerySpec) Eval(e *Evaluator) []*status.Object {
+func (qs KindQuerySpec) Eval(ctx context.Context, e *Evaluator) []*status.Object {
 	return e.Filter(qs.Namespace(), qs.GK)
 }
 
@@ -211,7 +212,7 @@ func (qs OwnerQuerySpec) GroupKindMatcher() GroupKindMatcher {
 	return qs.GK
 }
 
-func (qs OwnerQuerySpec) Eval(e *Evaluator) []*status.Object {
+func (qs OwnerQuerySpec) Eval(ctx context.Context, e *Evaluator) []*status.Object {
 	candidates := e.Filter(qs.Namespace(), qs.GK)
 	return e.filterOwnedBy(qs.Object, candidates)
 }
@@ -248,7 +249,7 @@ func (qs LabelQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs LabelQuerySpec) Eval(e *Evaluator) []*status.Object {
+func (qs LabelQuerySpec) Eval(ctx context.Context, e *Evaluator) []*status.Object {
 	candidates := e.Filter(qs.Object.GetNamespace(), qs.GK)
 	var ret []*status.Object
 	if qs.Selector == nil {
@@ -336,7 +337,7 @@ func (qs RefQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs RefQuerySpec) Eval(e *Evaluator) []*status.Object {
+func (qs RefQuerySpec) Eval(ctx context.Context, e *Evaluator) []*status.Object {
 	candidates := e.Filter(qs.Object.GetNamespace(), qs.GroupKindMatcher())
 	var ret []*status.Object
 
@@ -365,9 +366,9 @@ func (qs PodLogQuerySpec) Namespace() string {
 	return qs.Object.GetNamespace()
 }
 
-func (qs PodLogQuerySpec) Eval(e *Evaluator) []*status.Object {
+func (qs PodLogQuerySpec) Eval(ctx context.Context, e *Evaluator) []*status.Object {
 	data := make(map[string]interface{}, 1)
-	logs, err := e.loader.LoadPodLogs(e.ctx, qs.Object, qs.Container, 5)
+	logs, err := e.loader.LoadPodLogs(ctx, qs.Object, qs.Container, 5)
 	if err != nil {
 		klog.V(4).ErrorS(err, "Failed to get logs", "object", qs.Object)
 	} else {

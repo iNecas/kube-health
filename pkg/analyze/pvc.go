@@ -1,6 +1,8 @@
 package analyze
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -20,7 +22,7 @@ func (_ PVCAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkPvc
 }
 
-func (a PVCAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (a PVCAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	phase, _, _ := unstructured.NestedString(obj.Unstructured.Object, "status", "phase")
 	var conditions []status.ConditionStatus
 	if phase != "Bound" {

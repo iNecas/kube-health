@@ -5,6 +5,7 @@ package redhat
 // demonstrates how to extend kube-health with custom analyzers.
 
 import (
+	"context"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +39,9 @@ func (_ OLMSubscriptionAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkOLMSubscription
 }
 
-func (a OLMSubscriptionAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	installPlanStatuses := a.AnalyzeInstallPlans(obj)
-	csvStatuses := a.AnalyzeCSV(obj)
+func (a OLMSubscriptionAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	installPlanStatuses := a.AnalyzeInstallPlans(ctx, obj)
+	csvStatuses := a.AnalyzeCSV(ctx, obj)
 
 	conditions, err := analyze.AnalyzeObjectConditions(obj, append(
 		[]analyze.ConditionAnalyzer{subscriptionConditionsAnalyzer},
@@ -60,7 +61,7 @@ func (a OLMSubscriptionAnalyzer) Analyze(obj *status.Object) status.ObjectStatus
 	return analyze.AggregateResult(obj, subStatuses, conditions)
 }
 
-func (a OLMSubscriptionAnalyzer) AnalyzeInstallPlans(obj *status.Object) []status.ObjectStatus {
+func (a OLMSubscriptionAnalyzer) AnalyzeInstallPlans(ctx context.Context, obj *status.Object) []status.ObjectStatus {
 	var objRef corev1.ObjectReference
 	refData, found, err := unstructured.NestedMap(obj.Unstructured.Object, "status", "installPlanRef")
 	if err != nil {
@@ -77,7 +78,7 @@ func (a OLMSubscriptionAnalyzer) AnalyzeInstallPlans(obj *status.Object) []statu
 		return nil
 	}
 
-	installPlans, err := a.e.EvalQuery(eval.RefQuerySpec{
+	installPlans, err := a.e.EvalQuery(ctx, eval.RefQuerySpec{
 		Object:    obj,
 		RefObject: objRef,
 	}, OLMInstallPlanAnalyzer{})
@@ -90,7 +91,7 @@ func (a OLMSubscriptionAnalyzer) AnalyzeInstallPlans(obj *status.Object) []statu
 	return installPlans
 }
 
-func (a OLMSubscriptionAnalyzer) AnalyzeCSV(obj *status.Object) []status.ObjectStatus {
+func (a OLMSubscriptionAnalyzer) AnalyzeCSV(ctx context.Context, obj *status.Object) []status.ObjectStatus {
 	csvName, found, err := unstructured.NestedString(obj.Unstructured.Object, "status", "currentCSV")
 	if err != nil {
 		klog.V(5).ErrorS(err, "Failed to get install plan reference from OLM Subscription", "object", obj)
@@ -107,7 +108,7 @@ func (a OLMSubscriptionAnalyzer) AnalyzeCSV(obj *status.Object) []status.ObjectS
 		Namespace:  obj.Namespace,
 	}
 
-	csv, err := a.e.EvalQuery(eval.RefQuerySpec{
+	csv, err := a.e.EvalQuery(ctx, eval.RefQuerySpec{
 		Object:    obj,
 		RefObject: objRef,
 	}, OLMCSVAnalyzer{})
@@ -127,7 +128,7 @@ func (_ OLMInstallPlanAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkOLMInstallPlan
 }
 
-func (_ OLMInstallPlanAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (_ OLMInstallPlanAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	conditions, err := analyze.AnalyzeObjectConditions(obj, []analyze.ConditionAnalyzer{
 		analyze.GenericConditionAnalyzer{
 			Conditions: analyze.NewStringMatchers("Installed"),
@@ -147,7 +148,7 @@ func (_ OLMCSVAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkOLMCSV
 }
 
-func (_ OLMCSVAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (_ OLMCSVAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	statusData, found, err := unstructured.NestedMap(obj.Unstructured.Object, "status")
 	if err != nil {
 		return status.UnknownStatusWithError(obj, err)

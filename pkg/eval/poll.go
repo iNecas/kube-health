@@ -36,13 +36,13 @@ func (s *StatusPoller) Start(ctx context.Context) <-chan StatusUpdate {
 	go func() {
 		defer close(s.eventChan)
 		// Initial run
-		s.run()
+		s.run(ctx)
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(s.interval):
-				s.run()
+				s.run(ctx)
 			}
 		}
 	}()
@@ -50,13 +50,13 @@ func (s *StatusPoller) Start(ctx context.Context) <-chan StatusUpdate {
 	return s.eventChan
 }
 
-func (s *StatusPoller) run() {
+func (s *StatusPoller) run(ctx context.Context) {
 	// Reset the evaluator to clear the cache from previous run.
 	s.evaluator.Reset()
 
 	statuses := make([]status.ObjectStatus, 0, len(s.objects))
 	for _, obj := range s.objects {
-		statuses = append(statuses, s.evaluator.Eval(obj))
+		statuses = append(statuses, s.evaluator.Eval(ctx, obj))
 	}
 
 	s.eventChan <- StatusUpdate{

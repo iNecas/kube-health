@@ -67,7 +67,7 @@ func (_ MyAnalyzer) Supports(obj *status.Object) bool {
 }
 
 // Analyze gets called for each object supported by the analyzer.
-func (_ MyAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (_ MyAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	myresult, found, err := unstructured.NestedString(obj.Unstructured.Object, "status", "myresult")
 
 	// If evaluation fails, use UnknownStatusWithError.
@@ -123,9 +123,9 @@ func (_ MyAnalyzer) Supports(obj *status.Object) bool {
 		schema.GroupKind{Group: "mygroup.example.org", Kind: "MyResource"})
 }
 
-func (a MyAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (a MyAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	// Evaluate sub-objects based on owner references.
-	subStatuses, err := a.e.EvalQuery(analyze.GenericOwnerQuerySpec(obj), nil)
+	subStatuses, err := a.e.EvalQuery(ctx, analyze.GenericOwnerQuerySpec(obj), nil)
 
 	// The GenericConditionAnalyzer looks at presence of specific conditions.
 	// By default it considers True conditions to be Ok, unless they are listed

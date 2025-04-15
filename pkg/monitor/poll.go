@@ -53,13 +53,13 @@ func (s *MonitorPoller) Start(ctx context.Context) <-chan TargetsStatusUpdate {
 	go func() {
 		defer close(s.eventChan)
 		// Initial run
-		s.run()
+		s.run(ctx)
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(s.interval):
-				s.run()
+				s.run(ctx)
 			}
 		}
 	}()
@@ -67,7 +67,7 @@ func (s *MonitorPoller) Start(ctx context.Context) <-chan TargetsStatusUpdate {
 	return s.eventChan
 }
 
-func (s *MonitorPoller) run() {
+func (s *MonitorPoller) run(ctx context.Context) {
 	// Reset the evaluator to clear the cache from previous run.
 	s.evaluator.Reset()
 
@@ -82,7 +82,7 @@ func (s *MonitorPoller) run() {
 			// TODO: add namespace support
 			//Namespace: target.Namespace,
 		}
-		s, err := s.evaluator.EvalQuery(querySpec, nil)
+		s, err := s.evaluator.EvalQuery(ctx, querySpec, nil)
 		if err != nil {
 			klog.ErrorS(err, "failed to evaluate query", "query", querySpec)
 			continue

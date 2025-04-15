@@ -1,6 +1,7 @@
 package redhat_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -14,17 +15,18 @@ import (
 func TestOlmAnalyzer(t *testing.T) {
 	var os status.ObjectStatus
 	p := print.NewTreePrinter(print.PrintOptions{ShowOk: true})
+	ctx := context.Background()
 
 	e, _, objs := test.TestEvaluator("olm_subscriptions.yaml", "olm_install_plans.yaml", "olm_csvs.yaml")
 
-	os = e.Eval(objs[0])
+	os = e.Eval(ctx, objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 	test.AssertConditions(t, `
 CatalogSourcesUnhealthy AllCatalogSourcesHealthy all available catalogsources are healthy (Ok)
 `, os.Conditions)
 
-	os = e.Eval(objs[1])
+	os = e.Eval(ctx, objs[1])
 	assert.True(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 	test.AssertConditions(t, `
@@ -32,7 +34,7 @@ CatalogSourcesUnhealthy AllCatalogSourcesHealthy all available catalogsources ar
 InstallPlan InstallPlanMissing Install plan not found (Unknown)
 `, os.Conditions)
 
-	os = e.Eval(objs[2])
+	os = e.Eval(ctx, objs[2])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 	test.AssertConditions(t, `

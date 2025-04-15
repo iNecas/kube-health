@@ -1,6 +1,8 @@
 package analyze
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/inecas/kube-health/pkg/eval"
@@ -19,8 +21,8 @@ func (_ ServiceAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkService
 }
 
-func (a ServiceAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	subStatuses, err := a.e.EvalQuery(
+func (a ServiceAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	subStatuses, err := a.e.EvalQuery(ctx,
 		eval.NewSelectorLabelEqualityQuerySpec(obj, gkPod), PodAnalyzer{e: a.e})
 
 	if err != nil {

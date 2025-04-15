@@ -1,6 +1,7 @@
 package analyze_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -14,10 +15,10 @@ import (
 func TestDeploymentAnalyzer(t *testing.T) {
 	var os status.ObjectStatus
 	p := print.NewTreePrinter(print.PrintOptions{ShowOk: true})
-
+	ctx := context.Background()
 	e, l, objs := test.TestEvaluator("deployments.yaml", "pods.yaml", "replicasets.yaml")
 
-	os = e.Eval(objs[0])
+	os = e.Eval(ctx, objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 
@@ -41,7 +42,7 @@ Ok default/Deployment/dp1
 	`, sb.String())
 
 	l.RegisterPodLogs("default", "p2", "p2c", "Line 1\nLine 2\nLine 3\n")
-	os = e.Eval(objs[1])
+	os = e.Eval(ctx, objs[1])
 	assert.True(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 

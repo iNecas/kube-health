@@ -1,6 +1,8 @@
 package redhat
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -22,7 +24,7 @@ func (_ RouteAnalyzer) Supports(obj *status.Object) bool {
 		schema.GroupKind{Group: "route.openshift.io", Kind: "Route"})
 }
 
-func (_ RouteAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (_ RouteAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	var conditions []status.ConditionStatus
 
 	ingresses, _, _ := unstructured.NestedSlice(obj.Unstructured.Object, "status", "ingress")

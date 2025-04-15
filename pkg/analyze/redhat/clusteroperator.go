@@ -1,6 +1,8 @@
 package redhat
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/inecas/kube-health/pkg/analyze"
@@ -26,7 +28,7 @@ func (_ ClusterOperatorAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkClusterOperator
 }
 
-func (_ ClusterOperatorAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
+func (_ ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	conditionAnalyzers := append([]analyze.ConditionAnalyzer{clusteroperatorConditionsAnalyzer},
 		analyze.DefaultConditionAnalyzers...,
 	)

@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -23,8 +24,8 @@ func (_ ReplicaSetAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkReplicaSet
 }
 
-func (a ReplicaSetAnalyzer) Analyze(obj *status.Object) status.ObjectStatus {
-	subStatuses, err := a.e.EvalQuery(
+func (a ReplicaSetAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	subStatuses, err := a.e.EvalQuery(ctx,
 		eval.NewSelectorLabelQuerySpec(obj, gkPod), PodAnalyzer{e: a.e})
 
 	if err != nil {

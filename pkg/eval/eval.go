@@ -12,7 +12,7 @@ import (
 
 // Analyzer calculates status for the object.
 type Analyzer interface {
-	Analyze(obj *status.Object) status.ObjectStatus
+	Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus
 	// Supports should return true if the particular analyzer supports
 	// the given resource.
 	//
@@ -47,7 +47,6 @@ type Evaluator struct {
 	analyzers      []Analyzer
 	loader         Loader
 	analyzersCache map[types.UID]Analyzer
-	ctx            context.Context
 
 	cache              map[types.UID]*status.Object         // mapping of UID to the object
 	nsCache            map[string]*nsCache                  // mapping of namespace to its cache
@@ -56,11 +55,10 @@ type Evaluator struct {
 }
 
 // NewEvaluator creates a new Evaluator instance.
-func NewEvaluator(ctx context.Context, analyzerInits []AnalyzerInit, loader Loader) *Evaluator {
+func NewEvaluator(analyzerInits []AnalyzerInit, loader Loader) *Evaluator {
 	evaluator := &Evaluator{
 		loader:         loader,
 		analyzersCache: make(map[types.UID]Analyzer),
-		ctx:            ctx,
 
 		cache:     make(map[types.UID]*status.Object),
 		ownership: make(map[types.UID]map[types.UID]struct{}),
@@ -113,8 +111,8 @@ func (e *Evaluator) Reset() {
 
 // Evaluates the status of the object. It gets the most recent version
 // of the object and runs the appropriate analyzer on it.
-func (e *Evaluator) Eval(obj *status.Object) status.ObjectStatus {
-	analyzer := e.findAnalyzer(obj)
+func (e *Evaluator) Eval(ctx context.Context, obj *status.Object) status.ObjectStatus {
+	analyzer := e.findAnalyzer(ctx, obj)
 
 	var updatedObj *status.Object
 
@@ -122,21 +120,21 @@ func (e *Evaluator) Eval(obj *status.Object) status.ObjectStatus {
 
 	if !found {
 		var err error
-		updatedObj, err = e.loader.Get(e.ctx, obj)
+		updatedObj, err = e.loader.Get(ctx, obj)
 		if err != nil {
 			return status.UnknownStatusWithError(obj, err)
 		}
 		e.updateCache(obj)
 	}
 
-	return analyzer.Analyze(updatedObj)
+	return analyzer.Analyze(ctx, updatedObj)
 }
 
 // EvalQuery loads the objects specified by the query and runs the analyzer.
 // If the analyzer is not provided, it tries to find the appropriate one
 // in the register.
-func (e *Evaluator) EvalQuery(q QuerySpec, analyzer Analyzer) ([]status.ObjectStatus, error) {
-	objects, err := e.Load(q)
+func (e *Evaluator) EvalQuery(ctx context.Context, q QuerySpec, analyzer Analyzer) ([]status.ObjectStatus, error) {
+	objects, err := e.Load(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -145,24 +143,24 @@ func (e *Evaluator) EvalQuery(q QuerySpec, analyzer Analyzer) ([]status.ObjectSt
 	for _, obj := range objects {
 		a := analyzer
 		if a == nil {
-			a = e.findAnalyzer(obj)
+			a = e.findAnalyzer(ctx, obj)
 		}
-		ret = append(ret, a.Analyze(obj))
+		ret = append(ret, a.Analyze(ctx, obj))
 	}
 	return ret, nil
 }
 
 // Load loads the objects specified by the query.
-func (e *Evaluator) Load(q QuerySpec) ([]*status.Object, error) {
+func (e *Evaluator) Load(ctx context.Context, q QuerySpec) ([]*status.Object, error) {
 	if e.getNsCache(q.Namespace()).updateMatcher(q.GroupKindMatcher()) {
-		e.loadNamespace(q.Namespace())
+		e.loadNamespace(ctx, q.Namespace())
 	}
 
-	objects := q.Eval(e)
+	objects := q.Eval(ctx, e)
 	return objects, nil
 }
 
-func (e *Evaluator) findAnalyzer(obj *status.Object) Analyzer {
+func (e *Evaluator) findAnalyzer(ctx context.Context, obj *status.Object) Analyzer {
 	for _, analyzer := range e.analyzers {
 		if analyzer.Supports(obj) {
 			e.analyzersCache[obj.UID] = analyzer
@@ -179,7 +177,7 @@ func (e *Evaluator) getNsCache(ns string) *nsCache {
 	return e.nsCache[ns]
 }
 
-func (e *Evaluator) loadNamespace(ns string) error {
+func (e *Evaluator) loadNamespace(ctx context.Context, ns string) error {
 	var gksLoaded []schema.GroupKind
 	nsCache := e.getNsCache(ns)
 	for gk, _ := range nsCache.objects {
@@ -188,7 +186,7 @@ func (e *Evaluator) loadNamespace(ns string) error {
 
 	var err error
 
-	objs, err := e.loader.Load(e.ctx, ns, nsCache.matcher, gksLoaded)
+	objs, err := e.loader.Load(ctx, ns, nsCache.matcher, gksLoaded)
 	if err != nil {
 		return err
 	}
