@@ -76,6 +76,50 @@ func (l *RealLoader) LoadPodLogs(ctx context.Context, obj *status.Object, contai
 	return l.client.podLogs(ctx, obj, container, tailLines)
 }
 
+func (l *RealLoader) LoadResource(ctx context.Context, gr schema.GroupResource, namespace string, name string) ([]*status.Object, error) {
+	var version string
+	if namespace != "" {
+		// TODO
+	} else {
+		version = l.client.nonNsResources[gr]
+	}
+
+	gvr := schema.GroupVersionResource{
+		Group:    gr.Group,
+		Version:  version,
+		Resource: gr.Resource,
+	}
+
+	// if we know the name then get the resource directly
+	if name != "" {
+		u, err := l.client.dynamic.Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := status.NewObjectFromUnstructured(u)
+		if err != nil {
+			return nil, err
+		}
+		return []*status.Object{obj}, nil
+	}
+
+	unsts, err := l.client.list(ctx, gvr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*status.Object
+	for _, unst := range unsts {
+		obj, err := status.NewObjectFromUnstructured(unst)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
 // RESTClientGetter is an interface with a subset of
 // k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter,
 // We reduce it only to the methods we need.
@@ -92,7 +136,7 @@ type client struct {
 	config         *rest.Config
 	corev1client   corev1client.CoreV1Interface
 	nsResources    []schema.GroupVersionResource
-	nonNsResources []schema.GroupVersionResource
+	nonNsResources map[schema.GroupResource]string
 	gvrCache       map[schema.GroupVersionResource]schema.GroupKind
 }
 
@@ -123,10 +167,11 @@ func newGenericClient(clientGetter RESTClientGetter) (*client, error) {
 	}
 
 	ret := &client{
-		dynamic:      dynamic,
-		corev1client: coreclient,
-		mapper:       mapper,
-		gvrCache:     make(map[schema.GroupVersionResource]schema.GroupKind),
+		dynamic:        dynamic,
+		corev1client:   coreclient,
+		mapper:         mapper,
+		gvrCache:       make(map[schema.GroupVersionResource]schema.GroupKind),
+		nonNsResources: make(map[schema.GroupResource]string),
 	}
 
 	if err := ret.discover(discovery); err != nil {
@@ -144,6 +189,7 @@ func (c *client) discover(discovery discoveryclient.DiscoveryInterface) error {
 	}
 
 	for _, group := range resList {
+
 		gv, err := schema.ParseGroupVersion(group.GroupVersion)
 		if err != nil {
 			return fmt.Errorf("%q cannot be parsed into groupversion: %w", group.GroupVersion, err)
@@ -166,7 +212,10 @@ func (c *client) discover(discovery discoveryclient.DiscoveryInterface) error {
 			if apiRes.Namespaced {
 				c.nsResources = append(c.nsResources, res)
 			} else {
-				c.nonNsResources = append(c.nonNsResources, res)
+				c.nonNsResources[schema.GroupResource{
+					Group:    gv.Group,
+					Resource: apiRes.Name,
+				}] = gv.Version
 			}
 		}
 	}
@@ -189,14 +238,27 @@ func (c *client) listWithMatcher(ctx context.Context, ns string,
 	return c.listBulk(ctx, ns, resources)
 }
 
+func mapToSlice(m map[schema.GroupResource]string) []schema.GroupVersionResource {
+	var r []schema.GroupVersionResource
+	for k, v := range m {
+		r = append(r, schema.GroupVersionResource{
+			Group:    k.Group,
+			Resource: k.Resource,
+			Version:  v,
+		})
+	}
+	return r
+}
+
 func (c *client) compileGroupKindMatcher(matcher GroupKindMatcher, ns string) []schema.GroupVersionResource {
 	filterResources := func(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
 		return c.filterResources(resources, matcher.IncludeAll, matcher.IncludedKinds, matcher.ExcludedKinds)
 	}
+
 	var ret []schema.GroupVersionResource
 
 	if ns == NamespaceNone || ns == NamespaceAll {
-		ret = append(ret, filterResources(c.nonNsResources)...)
+		ret = append(ret, filterResources(mapToSlice(c.nonNsResources))...)
 	}
 
 	if ns != NamespaceNone || ns == NamespaceAll {
