@@ -38,6 +38,9 @@ type Loader interface {
 
 	// LoadResources loads the resource based on its group resource, namespace and name
 	LoadResource(ctx context.Context, gvr schema.GroupResource, namespace string, name string) ([]*status.Object, error)
+
+	// ResourceToKind helps to translate a groupResource to the corresponding groupVersionKind
+	ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind
 }
 
 // Evaluator is the entry structure for the status evaluation cycle.
@@ -165,6 +168,10 @@ func (e *Evaluator) EvalQuery(ctx context.Context, q QuerySpec, analyzer Analyze
 		ret = append(ret, a.Analyze(ctx, obj))
 	}
 	return ret, nil
+}
+
+func (e *Evaluator) ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind {
+	return e.loader.ResourceToKind(gr)
 }
 
 // Load loads the objects specified by the query.

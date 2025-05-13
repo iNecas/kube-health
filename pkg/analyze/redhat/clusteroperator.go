@@ -69,12 +69,15 @@ func (c *ClusterOperatorAnalyzer) evaluateRelatedObjects(ctx context.Context, re
 
 		gr := schema.GroupResource{Group: group, Resource: resource}
 
-		if slices.Contains(analyze.Register.IgnoredResources(), gr) {
+		if slices.Contains(analyze.Register.IgnoredKinds(), c.evaluator.ResourceToKind(gr).GroupKind()) {
 			continue
 		}
+		var namespace string
+		if ns, ok := relObjecMap["namespace"]; ok {
+			namespace = ns.(string)
+		}
 		name := relObjecMap["name"].(string)
-		// TODO try to get namespace name
-		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, gr, "", name)
+		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, gr, namespace, name)
 		if err != nil {
 			continue
 		}
@@ -90,18 +93,24 @@ func init() {
 		}
 	})
 
-	analyze.Register.RegisterIgnoredResources(
-		schema.GroupResource{Resource: "namespaces"},
-		schema.GroupResource{Resource: "secrets"},
-		schema.GroupResource{Resource: "configmaps"},
-		schema.GroupResource{Resource: "clusterroles", Group: "rbac.authorization.k8s.io"},
-		schema.GroupResource{Resource: "clusterrolebindings", Group: "rbac.authorization.k8s.io"},
-		schema.GroupResource{Resource: "roles", Group: "rbac.authorization.k8s.io"},
-		schema.GroupResource{Resource: "rolesbindings", Group: "rbac.authorization.k8s.io"},
-		schema.GroupResource{Resource: "customresourcedefinitions", Group: "apiextensions.k8s.io"},
-		schema.GroupResource{Resource: "securitycontextconstraints", Group: "security.openshift.io"},
-		schema.GroupResource{Resource: "validatingwebhookconfigurations", Group: "admissionregistration.k8s.io"},
-		schema.GroupResource{Resource: "mutatingwebhookconfigurations", Group: "admissionregistration.k8s.io"},
+	analyze.Register.RegisterIgnoredKinds(
+		schema.GroupKind{Kind: "Namespace"},
+		schema.GroupKind{Kind: "Secret"},
+		schema.GroupKind{Kind: "ConfigMap"},
+		schema.GroupKind{Kind: "ServiceAccount"},
+		schema.GroupKind{Kind: "ClusterRole", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "ClusterRoleBinding", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "Role", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "RoleBinding", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "CustomResourceDefinition", Group: "apiextensions.k8s.io"},
+		schema.GroupKind{Kind: "SecurityContextConstraints", Group: "security.openshift.io"},
+		schema.GroupKind{Kind: "MutatingWebhookConfiguration", Group: "admissionregistration.k8s.io"},
+		schema.GroupKind{Kind: "ValidatingWebhookConfiguration", Group: "admissionregistration.k8s.io"},
+		schema.GroupKind{Kind: "OAuth", Group: "config.openshift.io"},
+		schema.GroupKind{Kind: "Node", Group: "config.openshift.io"},
+		schema.GroupKind{Kind: "CloudCredential", Group: "operator.openshift.io"},
+		schema.GroupKind{Kind: "ConsolePlugin", Group: "console.openshift.io"},
+		schema.GroupKind{Kind: "MachineConfig", Group: "machineconfiguration.openshift.io"},
+		schema.GroupKind{Kind: "Template", Group: "template.openshift.io"},
 	)
-
 }
