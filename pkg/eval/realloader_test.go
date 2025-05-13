@@ -12,29 +12,31 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func TestFilterResources(t *testing.T) {
-	inputResources := []schema.GroupVersionResource{
-		{
-			Group:    "",
-			Version:  "v1",
-			Resource: "pods",
-		},
-		{
-			Group:    "",
-			Version:  "v1",
-			Resource: "deployments",
-		},
-		{
-			Group:    "",
-			Version:  "v1",
-			Resource: "persistentvolumeclaims",
-		},
-		{
-			Group:    "config.openshift.io",
-			Version:  "v1",
-			Resource: "clusteroperators",
-		},
+var (
+	podGVR = schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
 	}
+	deploymentGVR = schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "deployments",
+	}
+	pvcGVR = schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "persistentvolumeclaims",
+	}
+	coGVR = schema.GroupVersionResource{
+		Group:    "config.openshift.io",
+		Version:  "v1",
+		Resource: "clusteroperators",
+	}
+)
+
+func TestFilterResources(t *testing.T) {
+	inputResources := []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR}
 
 	tests := []struct {
 		name              string
@@ -44,32 +46,11 @@ func TestFilterResources(t *testing.T) {
 		expectedResources []schema.GroupVersionResource
 	}{
 		{
-			name:        "Include all resources",
-			includeAll:  true,
-			includedGKS: nil,
-			excludedGKS: nil,
-			expectedResources: []schema.GroupVersionResource{
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "pods",
-				},
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "deployments",
-				},
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "persistentvolumeclaims",
-				},
-				{
-					Group:    "config.openshift.io",
-					Version:  "v1",
-					Resource: "clusteroperators",
-				},
-			},
+			name:              "Include all resources",
+			includeAll:        true,
+			includedGKS:       nil,
+			excludedGKS:       nil,
+			expectedResources: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR},
 		},
 		{
 			name:              "Include nothing",
@@ -91,19 +72,8 @@ func TestFilterResources(t *testing.T) {
 					Kind:  "Deployment",
 				},
 			},
-			excludedGKS: nil,
-			expectedResources: []schema.GroupVersionResource{
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "pods",
-				},
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "deployments",
-				},
-			},
+			excludedGKS:       nil,
+			expectedResources: []schema.GroupVersionResource{podGVR, deploymentGVR},
 		},
 		{
 			name:        "Exclude some resources",
@@ -119,18 +89,7 @@ func TestFilterResources(t *testing.T) {
 					Kind:  "Deployment",
 				},
 			},
-			expectedResources: []schema.GroupVersionResource{
-				{
-					Group:    "",
-					Version:  "v1",
-					Resource: "persistentvolumeclaims",
-				},
-				{
-					Group:    "config.openshift.io",
-					Version:  "v1",
-					Resource: "clusteroperators",
-				},
-			},
+			expectedResources: []schema.GroupVersionResource{pvcGVR, coGVR},
 		},
 	}
 
@@ -140,6 +99,48 @@ func TestFilterResources(t *testing.T) {
 			assert.NoError(t, err)
 			filteredResources := testClient.filterResources(inputResources, tt.includeAll, tt.includedGKS, tt.excludedGKS)
 			assert.ElementsMatch(t, filteredResources, tt.expectedResources)
+		})
+	}
+}
+
+func TestCompileGroupKindMatcher(t *testing.T) {
+	tests := []struct {
+		name             string
+		gkMatcher        GroupKindMatcher
+		namespace        string
+		expectedResource []schema.GroupVersionResource
+	}{
+		{
+			name: "Include all GroupKindMatcher with no namespace",
+			gkMatcher: GroupKindMatcher{
+				IncludeAll: true,
+			},
+			namespace:        NamespaceNone,
+			expectedResource: []schema.GroupVersionResource{coGVR},
+		},
+		{
+			name: "Include all GroupKindMatcher with all namespaces",
+			gkMatcher: GroupKindMatcher{
+				IncludeAll: true,
+			},
+			namespace:        NamespaceAll,
+			expectedResource: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR},
+		},
+		{
+			name: "Include all GroupKindMatcher with particular namespaces",
+			gkMatcher: GroupKindMatcher{
+				IncludeAll: true,
+			},
+			namespace:        "test-namespace",
+			expectedResource: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testClient, err := newGenericClient(createTestConfigFlags())
+			assert.NoError(t, err)
+			resources := testClient.compileGroupKindMatcher(tt.gkMatcher, tt.namespace)
+			assert.ElementsMatch(t, resources, tt.expectedResource)
 		})
 	}
 }
