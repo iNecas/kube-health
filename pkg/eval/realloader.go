@@ -231,19 +231,7 @@ func (c *client) listWithMatcher(ctx context.Context, ns string,
 		resources = c.filterResources(resources, true, nil, excludedGks)
 	}
 
-	return c.listBulk(ctx, ns, mapToSlice(resources))
-}
-
-func mapToSlice(m resourcesMap) []schema.GroupVersionResource {
-	var r []schema.GroupVersionResource
-	for k, v := range m {
-		r = append(r, schema.GroupVersionResource{
-			Group:    k.Group,
-			Resource: k.Resource,
-			Version:  v.Version,
-		})
-	}
-	return r
+	return c.listBulk(ctx, ns, resources.toSlice())
 }
 
 func (c *client) compileGroupKindMatcher(matcher GroupKindMatcher, ns string) resourcesMap {
@@ -415,11 +403,13 @@ type groupVersionKindNamespaced struct {
 	namespaced bool
 }
 
+// resourcesMap is a map for mapping a groupResource to groupVersionKind
+// which also has a flag whether it is a namespaced resource or not
 type resourcesMap map[schema.GroupResource]groupVersionKindNamespaced
 
-func (r resourcesMap) namespacedResources() resourcesMap {
-	filtered := make(resourcesMap, len(r))
-	for k, v := range r {
+func (r *resourcesMap) namespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(*r))
+	for k, v := range *r {
 		if v.namespaced {
 			filtered[k] = v
 		}
@@ -427,12 +417,24 @@ func (r resourcesMap) namespacedResources() resourcesMap {
 	return filtered
 }
 
-func (r resourcesMap) nonNamespacedResources() resourcesMap {
-	filtered := make(resourcesMap, len(r))
-	for k, v := range r {
+func (r *resourcesMap) nonNamespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(*r))
+	for k, v := range *r {
 		if !v.namespaced {
 			filtered[k] = v
 		}
 	}
 	return filtered
+}
+
+func (r *resourcesMap) toSlice() []schema.GroupVersionResource {
+	var s []schema.GroupVersionResource
+	for k, v := range *r {
+		s = append(s, schema.GroupVersionResource{
+			Group:    k.Group,
+			Resource: k.Resource,
+			Version:  v.Version,
+		})
+	}
+	return s
 }

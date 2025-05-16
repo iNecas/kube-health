@@ -151,7 +151,7 @@ func (a AlwaysGreenAnalyzer) Analyze(ctx context.Context, obj *status.Object) st
 // It allows to register new analyzers and ignored GroupKinds.
 type AnalyzerRegister struct {
 	analyzerInits []eval.AnalyzerInit
-	ignoredKinds  []schema.GroupKind
+	ignored       []schema.GroupKind
 }
 
 // Register registers new analyzers.
@@ -169,11 +169,11 @@ func (r *AnalyzerRegister) RegisterSimple(as ...eval.Analyzer) {
 }
 
 func (r AnalyzerRegister) IgnoredKinds() []schema.GroupKind {
-	return r.ignoredKinds
+	return r.ignored
 }
 
 func (r *AnalyzerRegister) RegisterIgnoredKinds(gk ...schema.GroupKind) {
-	r.ignoredKinds = append(r.ignoredKinds, gk...)
+	r.ignored = append(r.ignored, gk...)
 }
 
 func (r *AnalyzerRegister) AnalyzerInits() []eval.AnalyzerInit {

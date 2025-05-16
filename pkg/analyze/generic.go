@@ -53,7 +53,7 @@ func GenericOwnerQuerySpec(obj *status.Object) eval.OwnerQuerySpec {
 		Object: obj,
 		GK: eval.GroupKindMatcher{
 			IncludeAll:    true,
-			ExcludedKinds: Register.ignoredKinds,
+			ExcludedKinds: Register.ignored,
 		},
 	}
 }
