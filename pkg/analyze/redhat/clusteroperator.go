@@ -2,10 +2,13 @@ package redhat
 
 import (
 	"context"
+	"slices"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/inecas/kube-health/pkg/analyze"
+	"github.com/inecas/kube-health/pkg/eval"
 	"github.com/inecas/kube-health/pkg/status"
 )
 
@@ -22,13 +25,15 @@ var (
 	}
 )
 
-type ClusterOperatorAnalyzer struct{}
+type ClusterOperatorAnalyzer struct {
+	evaluator *eval.Evaluator
+}
 
 func (_ ClusterOperatorAnalyzer) Supports(obj *status.Object) bool {
 	return obj.GroupVersionKind().GroupKind() == gkClusterOperator
 }
 
-func (_ ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
+func (c *ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Object) status.ObjectStatus {
 	conditionAnalyzers := append([]analyze.ConditionAnalyzer{clusteroperatorConditionsAnalyzer},
 		analyze.DefaultConditionAnalyzers...,
 	)
@@ -42,9 +47,72 @@ func (_ ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Object
 		return status.UnknownStatusWithError(obj, err)
 	}
 
-	return analyze.AggregateResult(obj, nil, conditions)
+	relatedObjects, _, err := unstructured.NestedSlice(obj.Unstructured.Object, "status", "relatedObjects")
+	if err != nil {
+		// do not add any substatuses in case of error
+		return analyze.AggregateResult(obj, nil, conditions)
+	}
+
+	subStatuses := c.evaluateRelatedObjects(ctx, relatedObjects)
+	return analyze.AggregateResult(obj, subStatuses, conditions)
+}
+
+func (c *ClusterOperatorAnalyzer) evaluateRelatedObjects(ctx context.Context, relatedObjects []interface{}) []status.ObjectStatus {
+	var statuses []status.ObjectStatus
+	for _, relObjec := range relatedObjects {
+		relObjecMap, ok := relObjec.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		resource := relObjecMap["resource"].(string)
+		group := relObjecMap["group"].(string)
+
+		gr := schema.GroupResource{Group: group, Resource: resource}
+
+		if slices.Contains(analyze.Register.IgnoredKinds(), c.evaluator.ResourceToKind(gr).GroupKind()) {
+			continue
+		}
+		var namespace string
+		if ns, ok := relObjecMap["namespace"]; ok {
+			namespace = ns.(string)
+		}
+		name := relObjecMap["name"].(string)
+		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, gr, namespace, name)
+		if err != nil {
+			continue
+		}
+		statuses = append(statuses, relObjectsStatuses...)
+	}
+	return statuses
 }
 
 func init() {
-	analyze.Register.RegisterSimple(ClusterOperatorAnalyzer{})
+	analyze.Register.Register(func(e *eval.Evaluator) eval.Analyzer {
+		return &ClusterOperatorAnalyzer{
+			evaluator: e,
+		}
+	})
+
+	analyze.Register.RegisterIgnoredKinds(
+		schema.GroupKind{Kind: "Namespace"},
+		schema.GroupKind{Kind: "Secret"},
+		schema.GroupKind{Kind: "ConfigMap"},
+		schema.GroupKind{Kind: "ServiceAccount"},
+		schema.GroupKind{Kind: "ClusterRole", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "ClusterRoleBinding", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "Role", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "RoleBinding", Group: "rbac.authorization.k8s.io"},
+		schema.GroupKind{Kind: "CustomResourceDefinition", Group: "apiextensions.k8s.io"},
+		schema.GroupKind{Kind: "SecurityContextConstraints", Group: "security.openshift.io"},
+		schema.GroupKind{Kind: "MutatingWebhookConfiguration", Group: "admissionregistration.k8s.io"},
+		schema.GroupKind{Kind: "ValidatingWebhookConfiguration", Group: "admissionregistration.k8s.io"},
+		schema.GroupKind{Kind: "OAuth", Group: "config.openshift.io"},
+		schema.GroupKind{Kind: "Node", Group: "config.openshift.io"},
+		schema.GroupKind{Kind: "CloudCredential", Group: "operator.openshift.io"},
+		schema.GroupKind{Kind: "ConsolePlugin", Group: "console.openshift.io"},
+		schema.GroupKind{Kind: "MachineConfig", Group: "machineconfiguration.openshift.io"},
+		schema.GroupKind{Kind: "Template", Group: "template.openshift.io"},
+		schema.GroupKind{Kind: "ServiceMonitor", Group: "monitoring.coreos.com"},
+		schema.GroupKind{Kind: "PrometheusRule", Group: "monitoring.coreos.com"},
+	)
 }
