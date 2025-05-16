@@ -112,5 +112,7 @@ func init() {
 		schema.GroupKind{Kind: "ConsolePlugin", Group: "console.openshift.io"},
 		schema.GroupKind{Kind: "MachineConfig", Group: "machineconfiguration.openshift.io"},
 		schema.GroupKind{Kind: "Template", Group: "template.openshift.io"},
+		schema.GroupKind{Kind: "ServiceMonitor", Group: "monitoring.coreos.com"},
+		schema.GroupKind{Kind: "PrometheusRule", Group: "monitoring.coreos.com"},
 	)
 }
