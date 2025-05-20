@@ -407,9 +407,9 @@ type groupVersionKindNamespaced struct {
 // which also has a flag whether it is a namespaced resource or not
 type resourcesMap map[schema.GroupResource]groupVersionKindNamespaced
 
-func (r *resourcesMap) namespacedResources() resourcesMap {
-	filtered := make(resourcesMap, len(*r))
-	for k, v := range *r {
+func (r resourcesMap) namespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(r))
+	for k, v := range r {
 		if v.namespaced {
 			filtered[k] = v
 		}
@@ -417,9 +417,9 @@ func (r *resourcesMap) namespacedResources() resourcesMap {
 	return filtered
 }
 
-func (r *resourcesMap) nonNamespacedResources() resourcesMap {
-	filtered := make(resourcesMap, len(*r))
-	for k, v := range *r {
+func (r resourcesMap) nonNamespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(r))
+	for k, v := range r {
 		if !v.namespaced {
 			filtered[k] = v
 		}
@@ -427,9 +427,9 @@ func (r *resourcesMap) nonNamespacedResources() resourcesMap {
 	return filtered
 }
 
-func (r *resourcesMap) toSlice() []schema.GroupVersionResource {
+func (r resourcesMap) toSlice() []schema.GroupVersionResource {
 	var s []schema.GroupVersionResource
-	for k, v := range *r {
+	for k, v := range r {
 		s = append(s, schema.GroupVersionResource{
 			Group:    k.Group,
 			Resource: k.Resource,

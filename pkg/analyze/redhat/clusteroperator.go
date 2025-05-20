@@ -47,6 +47,12 @@ func (c *ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Objec
 		return status.UnknownStatusWithError(obj, err)
 	}
 
+	// cloud-controller-manager references itself in the related objects
+	// so this is to avoid endless loop
+	if obj.Name == "cloud-controller-manager" {
+		return analyze.AggregateResult(obj, nil, conditions)
+	}
+
 	relatedObjects, _, err := unstructured.NestedSlice(obj.Unstructured.Object, "status", "relatedObjects")
 	if err != nil {
 		// do not add any substatuses in case of error
