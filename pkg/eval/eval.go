@@ -35,6 +35,12 @@ type Loader interface {
 
 	// Load evaluates the query based on the backend data.
 	LoadPodLogs(c context.Context, obj *status.Object, container string, tailLines int64) ([]byte, error)
+
+	// LoadResources loads the resource based on its group resource, namespace and name
+	LoadResource(ctx context.Context, gvr schema.GroupResource, namespace string, name string) ([]*status.Object, error)
+
+	// ResourceToKind helps to translate a groupResource to the corresponding groupVersionKind
+	ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind
 }
 
 // Evaluator is the entry structure for the status evaluation cycle.
@@ -109,6 +115,20 @@ func (e *Evaluator) Reset() {
 	clear(e.ownershipRefreshNs)
 }
 
+func (e *Evaluator) EvalResource(ctx context.Context, gr schema.GroupResource, namespace string, name string) ([]status.ObjectStatus, error) {
+	objects, err := e.loader.LoadResource(ctx, gr, namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []status.ObjectStatus
+	for _, obj := range objects {
+		a := e.findAnalyzer(ctx, obj)
+		ret = append(ret, a.Analyze(ctx, obj))
+	}
+	return ret, nil
+}
+
 // Evaluates the status of the object. It gets the most recent version
 // of the object and runs the appropriate analyzer on it.
 func (e *Evaluator) Eval(ctx context.Context, obj *status.Object) status.ObjectStatus {
@@ -148,6 +168,10 @@ func (e *Evaluator) EvalQuery(ctx context.Context, q QuerySpec, analyzer Analyze
 		ret = append(ret, a.Analyze(ctx, obj))
 	}
 	return ret, nil
+}
+
+func (e *Evaluator) ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind {
+	return e.loader.ResourceToKind(gr)
 }
 
 // Load loads the objects specified by the query.

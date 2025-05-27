@@ -23,7 +23,6 @@ import (
 // RealLoader is responsible for loading the objects from the cluster.
 type RealLoader struct {
 	client *client
-	mapper meta.RESTMapper
 }
 
 func NewRealLoader(config RESTClientGetter) (*RealLoader, error) {
@@ -76,6 +75,49 @@ func (l *RealLoader) LoadPodLogs(ctx context.Context, obj *status.Object, contai
 	return l.client.podLogs(ctx, obj, container, tailLines)
 }
 
+func (l *RealLoader) ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind {
+	return l.client.resources[gr].GroupVersionKind
+}
+
+func (l *RealLoader) LoadResource(ctx context.Context, gr schema.GroupResource, namespace string, name string) ([]*status.Object, error) {
+	gvk := l.client.resources[gr].GroupVersionKind
+
+	gvr := schema.GroupVersionResource{
+		Group:    gr.Group,
+		Version:  gvk.Version,
+		Resource: gr.Resource,
+	}
+
+	// if we know the name then get the resource directly
+	if name != "" {
+		u, err := l.client.dynamic.Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := status.NewObjectFromUnstructured(u)
+		if err != nil {
+			return nil, err
+		}
+		return []*status.Object{obj}, nil
+	}
+
+	unsts, err := l.client.list(ctx, gvr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*status.Object
+	for _, unst := range unsts {
+		obj, err := status.NewObjectFromUnstructured(unst)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
 // RESTClientGetter is an interface with a subset of
 // k8s.io/cli-runtime/pkg/genericclioptions.RESTClientGetter,
 // We reduce it only to the methods we need.
@@ -87,13 +129,10 @@ type RESTClientGetter interface {
 
 // client provides different ways to query the cluster to support the Loader.
 type client struct {
-	dynamic        dynamicclient.Interface
-	mapper         meta.RESTMapper
-	config         *rest.Config
-	corev1client   corev1client.CoreV1Interface
-	nsResources    []schema.GroupVersionResource
-	nonNsResources []schema.GroupVersionResource
-	gvrCache       map[schema.GroupVersionResource]schema.GroupKind
+	dynamic      dynamicclient.Interface
+	mapper       meta.RESTMapper
+	corev1client corev1client.CoreV1Interface
+	resources    resourcesMap
 }
 
 func newGenericClient(clientGetter RESTClientGetter) (*client, error) {
@@ -126,7 +165,7 @@ func newGenericClient(clientGetter RESTClientGetter) (*client, error) {
 		dynamic:      dynamic,
 		corev1client: coreclient,
 		mapper:       mapper,
-		gvrCache:     make(map[schema.GroupVersionResource]schema.GroupKind),
+		resources:    make(resourcesMap),
 	}
 
 	if err := ret.discover(discovery); err != nil {
@@ -144,6 +183,7 @@ func (c *client) discover(discovery discoveryclient.DiscoveryInterface) error {
 	}
 
 	for _, group := range resList {
+
 		gv, err := schema.ParseGroupVersion(group.GroupVersion)
 		if err != nil {
 			return fmt.Errorf("%q cannot be parsed into groupversion: %w", group.GroupVersion, err)
@@ -157,17 +197,20 @@ func (c *client) discover(discovery discoveryclient.DiscoveryInterface) error {
 				klog.V(5).Infof("api (%s) doesn't have required verb, skipping: %v", apiRes.Name, apiRes.Verbs)
 				continue
 			}
-			res := schema.GroupVersionResource{
+			gr := schema.GroupResource{
 				Group:    gv.Group,
-				Version:  gv.Version,
 				Resource: apiRes.Name,
 			}
-
-			if apiRes.Namespaced {
-				c.nsResources = append(c.nsResources, res)
-			} else {
-				c.nonNsResources = append(c.nonNsResources, res)
+			gvk := groupVersionKindNamespaced{
+				GroupVersionKind: schema.GroupVersionKind{
+					Group:   gv.Group,
+					Version: gv.Version,
+					Kind:    apiRes.Kind,
+				},
+				namespaced: apiRes.Namespaced,
 			}
+
+			c.resources[gr] = gvk
 		}
 	}
 	return nil
@@ -186,53 +229,31 @@ func (c *client) listWithMatcher(ctx context.Context, ns string,
 		resources = c.filterResources(resources, true, nil, excludedGks)
 	}
 
-	return c.listBulk(ctx, ns, resources)
+	return c.listBulk(ctx, ns, resources.toSlice())
 }
 
-func (c *client) compileGroupKindMatcher(matcher GroupKindMatcher, ns string) []schema.GroupVersionResource {
-	filterResources := func(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
+func (c *client) compileGroupKindMatcher(matcher GroupKindMatcher, ns string) resourcesMap {
+	filterResources := func(resources resourcesMap) resourcesMap {
 		return c.filterResources(resources, matcher.IncludeAll, matcher.IncludedKinds, matcher.ExcludedKinds)
 	}
-	var ret []schema.GroupVersionResource
 
-	if ns == NamespaceNone || ns == NamespaceAll {
-		ret = append(ret, filterResources(c.nonNsResources)...)
+	switch ns {
+	case NamespaceAll:
+		return filterResources(c.resources)
+	case NamespaceNone:
+		return filterResources(c.resources.nonNamespacedResources())
+	default:
+		return filterResources(c.resources.namespacedResources())
 	}
-
-	if ns != NamespaceNone || ns == NamespaceAll {
-		ret = append(ret, filterResources(c.nsResources)...)
-	}
-
-	return ret
 }
 
-func (c *client) gvrToGk(res schema.GroupVersionResource) (schema.GroupKind, error) {
-	if gk, ok := c.gvrCache[res]; ok {
-		return gk, nil
-	}
-	gvk, err := c.mapper.KindFor(res)
-
-	if err != nil {
-		return schema.GroupKind{}, err
-	}
-
-	c.gvrCache[res] = gvk.GroupKind()
-	return gvk.GroupKind(), nil
-}
-
-func (c *client) filterResources(resources []schema.GroupVersionResource,
-	includeAll bool, includedGks, excludedGks []schema.GroupKind) []schema.GroupVersionResource {
-	var filtered []schema.GroupVersionResource
-	for _, res := range resources {
-		resGk, err := c.gvrToGk(res)
-		if err != nil {
-			klog.V(2).Infof("failed to get kind for resource: %v", err)
-			continue
-		}
-
+func (c *client) filterResources(resources resourcesMap,
+	includeAll bool, includedGks, excludedGks []schema.GroupKind) resourcesMap {
+	filtered := make(resourcesMap)
+	for gr, gvk := range resources {
 		if len(includedGks) > 0 {
-			if slices.Contains(includedGks, resGk) {
-				filtered = append(filtered, res)
+			if slices.Contains(includedGks, gvk.GroupKind()) {
+				filtered[gr] = gvk
 			}
 			continue
 		}
@@ -244,14 +265,14 @@ func (c *client) filterResources(resources []schema.GroupVersionResource,
 		}
 
 		if len(excludedGks) > 0 {
-			if !slices.Contains(excludedGks, resGk) {
-				filtered = append(filtered, res)
+			if !slices.Contains(excludedGks, gvk.GroupKind()) {
+				filtered[gr] = gvk
 			}
 			continue
 		}
 
 		// We got this far: no filters, include everything.
-		filtered = append(filtered, res)
+		filtered[gr] = gvk
 	}
 	return filtered
 }
@@ -373,4 +394,45 @@ func buildDynamicClient(c *rest.Config) (*dynamicclient.DynamicClient, error) {
 		return nil, err
 	}
 	return dynamicClient, nil
+}
+
+type groupVersionKindNamespaced struct {
+	schema.GroupVersionKind
+	namespaced bool
+}
+
+// resourcesMap is a map for mapping a groupResource to groupVersionKind
+// which also has a flag whether it is a namespaced resource or not
+type resourcesMap map[schema.GroupResource]groupVersionKindNamespaced
+
+func (r resourcesMap) namespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(r))
+	for k, v := range r {
+		if v.namespaced {
+			filtered[k] = v
+		}
+	}
+	return filtered
+}
+
+func (r resourcesMap) nonNamespacedResources() resourcesMap {
+	filtered := make(resourcesMap, len(r))
+	for k, v := range r {
+		if !v.namespaced {
+			filtered[k] = v
+		}
+	}
+	return filtered
+}
+
+func (r resourcesMap) toSlice() []schema.GroupVersionResource {
+	var s []schema.GroupVersionResource
+	for k, v := range r {
+		s = append(s, schema.GroupVersionResource{
+			Group:    k.Group,
+			Resource: k.Resource,
+			Version:  v.Version,
+		})
+	}
+	return s
 }

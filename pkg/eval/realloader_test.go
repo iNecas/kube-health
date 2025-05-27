@@ -13,51 +13,83 @@ import (
 )
 
 var (
-	podGVR = schema.GroupVersionResource{
+	podGR = schema.GroupResource{
 		Group:    "",
-		Version:  "v1",
 		Resource: "pods",
 	}
-	deploymentGVR = schema.GroupVersionResource{
+	deploymentGR = schema.GroupResource{
 		Group:    "",
-		Version:  "v1",
 		Resource: "deployments",
 	}
-	pvcGVR = schema.GroupVersionResource{
+	pvcGR = schema.GroupResource{
 		Group:    "",
-		Version:  "v1",
 		Resource: "persistentvolumeclaims",
 	}
-	coGVR = schema.GroupVersionResource{
+	coGR = schema.GroupResource{
 		Group:    "config.openshift.io",
-		Version:  "v1",
 		Resource: "clusteroperators",
+	}
+	podGVK = schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "Pod",
+	}
+	deploymentGVK = schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "Deployment",
+	}
+	pvcGVK = schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "PersistentVolumeClaim",
+	}
+	coGVK = schema.GroupVersionKind{
+		Group:   "config.openshift.io",
+		Version: "v1",
+		Kind:    "ClusterOperator",
+	}
+	allTestResources = resourcesMap{
+		podGR: groupVersionKindNamespaced{
+			GroupVersionKind: podGVK,
+			namespaced:       true,
+		},
+		deploymentGR: groupVersionKindNamespaced{
+			GroupVersionKind: deploymentGVK,
+			namespaced:       true,
+		},
+		pvcGR: groupVersionKindNamespaced{
+			GroupVersionKind: pvcGVK,
+			namespaced:       true,
+		},
+		coGR: groupVersionKindNamespaced{
+			GroupVersionKind: coGVK,
+			namespaced:       false,
+		},
 	}
 )
 
 func TestFilterResources(t *testing.T) {
-	inputResources := []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR}
-
 	tests := []struct {
 		name              string
 		includeAll        bool
 		includedGKS       []schema.GroupKind
 		excludedGKS       []schema.GroupKind
-		expectedResources []schema.GroupVersionResource
+		expectedResources resourcesMap
 	}{
 		{
 			name:              "Include all resources",
 			includeAll:        true,
 			includedGKS:       nil,
 			excludedGKS:       nil,
-			expectedResources: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR},
+			expectedResources: allTestResources,
 		},
 		{
 			name:              "Include nothing",
 			includeAll:        false,
 			includedGKS:       nil,
 			excludedGKS:       nil,
-			expectedResources: nil,
+			expectedResources: resourcesMap{},
 		},
 		{
 			name:       "Include only some resources",
@@ -72,8 +104,17 @@ func TestFilterResources(t *testing.T) {
 					Kind:  "Deployment",
 				},
 			},
-			excludedGKS:       nil,
-			expectedResources: []schema.GroupVersionResource{podGVR, deploymentGVR},
+			excludedGKS: nil,
+			expectedResources: resourcesMap{
+				podGR: groupVersionKindNamespaced{
+					GroupVersionKind: podGVK,
+					namespaced:       true,
+				},
+				deploymentGR: groupVersionKindNamespaced{
+					GroupVersionKind: deploymentGVK,
+					namespaced:       true,
+				},
+			},
 		},
 		{
 			name:        "Exclude some resources",
@@ -89,7 +130,16 @@ func TestFilterResources(t *testing.T) {
 					Kind:  "Deployment",
 				},
 			},
-			expectedResources: []schema.GroupVersionResource{pvcGVR, coGVR},
+			expectedResources: resourcesMap{
+				pvcGR: groupVersionKindNamespaced{
+					GroupVersionKind: pvcGVK,
+					namespaced:       true,
+				},
+				coGR: groupVersionKindNamespaced{
+					GroupVersionKind: coGVK,
+					namespaced:       false,
+				},
+			},
 		},
 	}
 
@@ -97,42 +147,60 @@ func TestFilterResources(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testClient, err := newGenericClient(createTestConfigFlags())
 			assert.NoError(t, err)
-			filteredResources := testClient.filterResources(inputResources, tt.includeAll, tt.includedGKS, tt.excludedGKS)
-			assert.ElementsMatch(t, filteredResources, tt.expectedResources)
+			filteredResources := testClient.filterResources(allTestResources, tt.includeAll, tt.includedGKS, tt.excludedGKS)
+			assert.Equal(t, filteredResources, tt.expectedResources)
 		})
 	}
 }
 
 func TestCompileGroupKindMatcher(t *testing.T) {
 	tests := []struct {
-		name             string
-		gkMatcher        GroupKindMatcher
-		namespace        string
-		expectedResource []schema.GroupVersionResource
+		name              string
+		gkMatcher         GroupKindMatcher
+		namespace         string
+		expectedResources resourcesMap
 	}{
 		{
 			name: "Include all GroupKindMatcher with no namespace",
 			gkMatcher: GroupKindMatcher{
 				IncludeAll: true,
 			},
-			namespace:        NamespaceNone,
-			expectedResource: []schema.GroupVersionResource{coGVR},
+			namespace: NamespaceNone,
+			expectedResources: resourcesMap{
+				coGR: groupVersionKindNamespaced{
+					GroupVersionKind: coGVK,
+					namespaced:       false,
+				},
+			},
 		},
 		{
 			name: "Include all GroupKindMatcher with all namespaces",
 			gkMatcher: GroupKindMatcher{
 				IncludeAll: true,
 			},
-			namespace:        NamespaceAll,
-			expectedResource: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR, coGVR},
+			namespace:         NamespaceAll,
+			expectedResources: allTestResources,
 		},
 		{
 			name: "Include all GroupKindMatcher with particular namespaces",
 			gkMatcher: GroupKindMatcher{
 				IncludeAll: true,
 			},
-			namespace:        "test-namespace",
-			expectedResource: []schema.GroupVersionResource{podGVR, deploymentGVR, pvcGVR},
+			namespace: "test-namespace",
+			expectedResources: resourcesMap{
+				podGR: groupVersionKindNamespaced{
+					GroupVersionKind: podGVK,
+					namespaced:       true,
+				},
+				deploymentGR: groupVersionKindNamespaced{
+					GroupVersionKind: deploymentGVK,
+					namespaced:       true,
+				},
+				pvcGR: groupVersionKindNamespaced{
+					GroupVersionKind: pvcGVK,
+					namespaced:       true,
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -140,7 +208,7 @@ func TestCompileGroupKindMatcher(t *testing.T) {
 			testClient, err := newGenericClient(createTestConfigFlags())
 			assert.NoError(t, err)
 			resources := testClient.compileGroupKindMatcher(tt.gkMatcher, tt.namespace)
-			assert.ElementsMatch(t, resources, tt.expectedResource)
+			assert.Equal(t, resources, tt.expectedResources)
 		})
 	}
 }
