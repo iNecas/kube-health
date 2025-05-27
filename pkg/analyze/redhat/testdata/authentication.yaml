@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: operator.openshift.io/v1
+    kind: Authentication
+    metadata:
+      annotations:
+        include.release.openshift.io/self-managed-high-availability: "true"
+        include.release.openshift.io/single-node-developer: "true"
+        release.openshift.io/create-only: "true"
+      name: cluster
+      uid: 5a347d58-3053-427a-b621-48f99f36c623
+      ownerReferences:
+      - apiVersion: config.openshift.io/v1
+        kind: ClusterVersion
+        name: version
+        uid: 6f8b6c45-84c7-48cd-a9ce-5156dff71c55
+    spec:
+      logLevel: Normal
+      managementState: Managed
+      observedConfig: {}
+      operatorLogLevel: Normal
+      unsupportedConfigOverrides: null
+    status:
+      conditions:
+      - lastTransitionTime: "2025-05-26T07:11:44Z"
+        message: ""
+        reason: ""
+        status: "False"
+        type: OAuthServiceDegraded
+      - lastTransitionTime: "2025-05-26T07:19:18Z"
+        reason: AsExpected
+        status: "True"
+        type: APIServerDeploymentAvailable
+      - lastTransitionTime: "2025-05-26T07:19:18Z"
+        reason: AsExpected
+        status: "False"
+        type: APIServerDeploymentDegraded

@@ -23,7 +23,6 @@ import (
 // RealLoader is responsible for loading the objects from the cluster.
 type RealLoader struct {
 	client *client
-	mapper meta.RESTMapper
 }
 
 func NewRealLoader(config RESTClientGetter) (*RealLoader, error) {
@@ -132,7 +131,6 @@ type RESTClientGetter interface {
 type client struct {
 	dynamic      dynamicclient.Interface
 	mapper       meta.RESTMapper
-	config       *rest.Config
 	corev1client corev1client.CoreV1Interface
 	resources    resourcesMap
 }

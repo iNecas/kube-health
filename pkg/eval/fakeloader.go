@@ -52,8 +52,15 @@ func (l *FakeLoader) ResourceToKind(gr schema.GroupResource) schema.GroupVersion
 }
 
 func (l *FakeLoader) LoadResource(ctx context.Context, gr schema.GroupResource, namespace string, name string) ([]*status.Object, error) {
-	// noop
-	return []*status.Object{}, nil
+	r := []*status.Object{}
+	for _, v := range l.cache {
+		// this is not exact check (Kind comparison is missing) but right now it's sufficient for
+		// testing
+		if v.Name == name && v.GroupVersionKind().Group == gr.Group && v.Namespace == namespace {
+			r = append(r, v)
+		}
+	}
+	return r, nil
 }
 
 func (l *FakeLoader) LoadPodLogs(ctx context.Context, obj *status.Object, container string, tailLines int64) ([]byte, error) {
