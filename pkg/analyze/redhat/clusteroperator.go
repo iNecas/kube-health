@@ -2,10 +2,10 @@ package redhat
 
 import (
 	"context"
-	"slices"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 
 	"github.com/inecas/kube-health/pkg/analyze"
 	"github.com/inecas/kube-health/pkg/eval"
@@ -47,49 +47,71 @@ func (c *ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Objec
 		return status.UnknownStatusWithError(obj, err)
 	}
 
-	// cloud-controller-manager references itself in the related objects
-	// so this is to avoid endless loop
-	if obj.Name == "cloud-controller-manager" {
-		return analyze.AggregateResult(obj, nil, conditions)
-	}
-
 	relatedObjects, _, err := unstructured.NestedSlice(obj.Unstructured.Object, "status", "relatedObjects")
 	if err != nil {
 		// do not add any substatuses in case of error
 		return analyze.AggregateResult(obj, nil, conditions)
 	}
 
-	subStatuses := c.evaluateRelatedObjects(ctx, relatedObjects)
+	objectInfos := adaptRelatedObjects(obj, relatedObjects)
+
+	subStatuses := c.evaluateRelatedObjects(ctx, objectInfos)
 	return analyze.AggregateResult(obj, subStatuses, conditions)
 }
 
-func (c *ClusterOperatorAnalyzer) evaluateRelatedObjects(ctx context.Context, relatedObjects []interface{}) []status.ObjectStatus {
+func (c *ClusterOperatorAnalyzer) evaluateRelatedObjects(ctx context.Context, objectInfos []objectInfo) []status.ObjectStatus {
 	var statuses []status.ObjectStatus
+	for _, objInfo := range objectInfos {
+		if analyze.Register.IsIgnoredKind(c.evaluator.ResourceToKind(objInfo.groupResource).GroupKind()) {
+			continue
+		}
+		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, objInfo.groupResource, objInfo.namespace, objInfo.name)
+		if err != nil {
+			klog.V(5).Infof("Failed to evaluate %s with name %s in the namespac %s: %v",
+				objInfo.groupResource, objInfo.namespace, objInfo.name, err)
+			continue
+		}
+		statuses = append(statuses, relObjectsStatuses...)
+	}
+	return statuses
+}
+
+type objectInfo struct {
+	groupResource   schema.GroupResource
+	name, namespace string
+}
+
+// adaptRelatedObjects reads and transforms the untyped related objects and
+// checks if a related object name is not the same as the parent object name.
+func adaptRelatedObjects(parent *status.Object, relatedObjects []interface{}) []objectInfo {
+	var adaptedObjects []objectInfo
 	for _, relObjec := range relatedObjects {
 		relObjecMap, ok := relObjec.(map[string]interface{})
 		if !ok {
+			klog.V(5).Infof("Failed to convert %s to map[string]interface{}", relObjec)
 			continue
 		}
 		resource := relObjecMap["resource"].(string)
 		group := relObjecMap["group"].(string)
 
 		gr := schema.GroupResource{Group: group, Resource: resource}
-
-		if slices.Contains(analyze.Register.IgnoredKinds(), c.evaluator.ResourceToKind(gr).GroupKind()) {
-			continue
-		}
 		var namespace string
 		if ns, ok := relObjecMap["namespace"]; ok {
 			namespace = ns.(string)
 		}
 		name := relObjecMap["name"].(string)
-		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, gr, namespace, name)
-		if err != nil {
+		objInf := objectInfo{
+			groupResource: gr,
+			name:          name,
+			namespace:     namespace,
+		}
+		// some clusteroperators references themselves in the relatedObjects
+		if parent.Name == name {
 			continue
 		}
-		statuses = append(statuses, relObjectsStatuses...)
+		adaptedObjects = append(adaptedObjects, objInf)
 	}
-	return statuses
+	return adaptedObjects
 }
 
 func init() {

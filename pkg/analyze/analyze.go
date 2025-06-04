@@ -168,8 +168,8 @@ func (r *AnalyzerRegister) RegisterSimple(as ...eval.Analyzer) {
 	}
 }
 
-func (r AnalyzerRegister) IgnoredKinds() []schema.GroupKind {
-	return r.ignored
+func (r AnalyzerRegister) IsIgnoredKind(gvk schema.GroupKind) bool {
+	return slices.Contains(r.ignored, gvk)
 }
 
 func (r *AnalyzerRegister) RegisterIgnoredKinds(gk ...schema.GroupKind) {
