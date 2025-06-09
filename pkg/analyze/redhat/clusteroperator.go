@@ -62,7 +62,9 @@ func (c *ClusterOperatorAnalyzer) Analyze(ctx context.Context, obj *status.Objec
 func (c *ClusterOperatorAnalyzer) evaluateRelatedObjects(ctx context.Context, objectInfos []objectInfo) []status.ObjectStatus {
 	var statuses []status.ObjectStatus
 	for _, objInfo := range objectInfos {
-		if analyze.Register.IsIgnoredKind(c.evaluator.ResourceToKind(objInfo.groupResource).GroupKind()) {
+		gk := c.evaluator.ResourceToKind(objInfo.groupResource).GroupKind()
+		if analyze.Register.IsIgnoredKind(gk) {
+			klog.V(7).Infof("%s kind (in group %s) is registered as ignored", gk.Kind, gk.Group)
 			continue
 		}
 		relObjectsStatuses, err := c.evaluator.EvalResource(ctx, objInfo.groupResource, objInfo.namespace, objInfo.name)
@@ -107,6 +109,7 @@ func adaptRelatedObjects(parent *status.Object, relatedObjects []interface{}) []
 		}
 		// some clusteroperators references themselves in the relatedObjects
 		if parent.Name == name {
+			klog.V(7).Infof("%s.%s seems to reference itself", name, gr)
 			continue
 		}
 		adaptedObjects = append(adaptedObjects, objInf)
