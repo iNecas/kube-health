@@ -64,4 +64,8 @@ items:
       reason: NoData
       status: Unknown
       type: EvaluationConditionsDetected
+    relatedObjects:
+    - group: operator.openshift.io
+      name: cluster
+      resource: authentications
     extension: null
