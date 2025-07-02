@@ -79,6 +79,32 @@ func (l *RealLoader) ResourceToKind(gr schema.GroupResource) schema.GroupVersion
 	return l.client.resources[gr].GroupVersionKind
 }
 
+func (l *RealLoader) LoadResourceBySelector(ctx context.Context,
+	gr schema.GroupResource, namespace string, labelSelector string) ([]*status.Object, error) {
+	gvk := l.client.resources[gr].GroupVersionKind
+	gvr := schema.GroupVersionResource{
+		Group:    gr.Group,
+		Version:  gvk.Version,
+		Resource: gr.Resource,
+	}
+
+	unsts, err := l.client.listWithSelector(ctx, gvr, namespace, labelSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*status.Object
+	for _, unst := range unsts {
+		obj, err := status.NewObjectFromUnstructured(unst)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
 func (l *RealLoader) LoadResource(ctx context.Context, gr schema.GroupResource, namespace string, name string) ([]*status.Object, error) {
 	gvk := l.client.resources[gr].GroupVersionKind
 
@@ -90,7 +116,8 @@ func (l *RealLoader) LoadResource(ctx context.Context, gr schema.GroupResource, 
 
 	// if we know the name then get the resource directly
 	if name != "" {
-		u, err := l.client.dynamic.Resource(gvr).Get(ctx, name, metav1.GetOptions{})
+		u, err := l.client.dynamic.Resource(gvr).
+			Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -319,6 +346,24 @@ func (c *client) listBulk(ctx context.Context, ns string, resources []schema.Gro
 
 	klog.V(3).InfoS("query results", "objects", len(out), "error", errResult)
 	return out, errResult
+}
+
+func (c *client) listWithSelector(ctx context.Context,
+	resource schema.GroupVersionResource, ns string, labelSelector string) ([]*unstructured.Unstructured, error) {
+	var res []*unstructured.Unstructured
+
+	resp, err := c.dynamic.Resource(resource).Namespace(ns).List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("listing resources with selector %s failed (%s): %w", labelSelector, resource, err)
+	}
+	for _, item := range resp.Items {
+		res = append(res, &item)
+	}
+
+	return res, nil
+
 }
 
 func (c *client) list(ctx context.Context, resource schema.GroupVersionResource, ns string) ([]*unstructured.Unstructured, error) {
