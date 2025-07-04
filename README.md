@@ -73,6 +73,23 @@ There are multiple waiting strategies implemented:
 If some resources are progressing, `8` is added to the exit code: use bitwise
 AND to extract this information.
 
+## Library usage
+
+You can use kube-health programmatically as a library via the `khealth` package, which provides a simple way to create and work with an Evaluator instance.
+
+```Go
+	evaluator, err := khealth.NewHealthEvaluator(nil)
+	if err != nil {
+		return err
+	}
+
+	statuses, err := evaluator.EvalResource(
+		context.Background(),
+		schema.GroupResource{Group: "", Resource: "nodes"},
+		"",
+		"master-node-name")
+```
+
 ## Use with Prometheus/Grafana
 
 Besides using `kube-health` from command line, it is possible to
