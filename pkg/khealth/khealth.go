@@ -1,3 +1,7 @@
+// Package khealth provides a way to use kube-health
+// as a library. The main usage is to create a new instance
+// of `eval.Evaluator` that can then be used programmatically to
+// evaluate the health of Kubernetes resources.
 package khealth
 
 import (
