@@ -111,7 +111,7 @@ func formatConditionType(o PrintOptions, cond status.ConditionStatus) string {
 	if o.Color {
 		color, setColor := statusColor(cond.Status())
 		if setColor {
-			return SprintfWithColor(color, cond.Type)
+			return SprintfWithColor(color, "%s", cond.Type)
 		} else {
 			return cond.Type
 		}
@@ -130,7 +130,7 @@ func formatStatus(o PrintOptions, obj status.ObjectStatus) string {
 	if o.Color {
 		color, setColor := statusColor(s)
 		if setColor {
-			ret = SprintfWithColor(color, ret)
+			ret = SprintfWithColor(color, "%s", ret)
 		}
 	}
 	return ret
@@ -332,7 +332,7 @@ func (t *TreePrinter) printRow(w io.Writer, row []Cell, prefixHead, prefixTail s
 				txt = padStringKeepControl(txt, cell.Column.Width) + cellSep
 			}
 
-			t.printf(w, txt)
+			t.printf(w, "%s", txt)
 		}
 		t.printf(w, "\n")
 	}
