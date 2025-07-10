@@ -36,8 +36,11 @@ type Loader interface {
 	// Load evaluates the query based on the backend data.
 	LoadPodLogs(c context.Context, obj *status.Object, container string, tailLines int64) ([]byte, error)
 
-	// LoadResources loads the resource based on its group resource, namespace and name
+	// LoadResource loads the resource based on its group resource, namespace and name
 	LoadResource(ctx context.Context, gvr schema.GroupResource, namespace string, name string) ([]*status.Object, error)
+
+	// LoadResourceBySelector loads the resource based on its group resource, namespace and label selector
+	LoadResourceBySelector(ctx context.Context, gvr schema.GroupResource, namespace string, label string) ([]*status.Object, error)
 
 	// ResourceToKind helps to translate a groupResource to the corresponding groupVersionKind
 	ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind
@@ -121,12 +124,17 @@ func (e *Evaluator) EvalResource(ctx context.Context, gr schema.GroupResource, n
 		return nil, err
 	}
 
-	var ret []status.ObjectStatus
-	for _, obj := range objects {
-		a := e.findAnalyzer(ctx, obj)
-		ret = append(ret, a.Analyze(ctx, obj))
+	return e.analyzeObjects(ctx, objects, nil), nil
+}
+
+func (e *Evaluator) EvalResourceWithSelector(ctx context.Context,
+	gr schema.GroupResource, namespace string, label string) ([]status.ObjectStatus, error) {
+	objects, err := e.loader.LoadResourceBySelector(ctx, gr, namespace, label)
+	if err != nil {
+		return nil, err
 	}
-	return ret, nil
+
+	return e.analyzeObjects(ctx, objects, nil), nil
 }
 
 // Evaluates the status of the object. It gets the most recent version
@@ -159,15 +167,7 @@ func (e *Evaluator) EvalQuery(ctx context.Context, q QuerySpec, analyzer Analyze
 		return nil, err
 	}
 
-	var ret []status.ObjectStatus
-	for _, obj := range objects {
-		a := analyzer
-		if a == nil {
-			a = e.findAnalyzer(ctx, obj)
-		}
-		ret = append(ret, a.Analyze(ctx, obj))
-	}
-	return ret, nil
+	return e.analyzeObjects(ctx, objects, analyzer), nil
 }
 
 func (e *Evaluator) ResourceToKind(gr schema.GroupResource) schema.GroupVersionKind {
@@ -243,6 +243,20 @@ func (e *Evaluator) loadNamespace(ctx context.Context, ns string) error {
 	}
 
 	return nil
+}
+
+func (e *Evaluator) analyzeObjects(ctx context.Context, objects []*status.Object, analyzer Analyzer) []status.ObjectStatus {
+	var ret []status.ObjectStatus
+	for _, obj := range objects {
+		var a Analyzer
+		if analyzer == nil {
+			a = e.findAnalyzer(ctx, obj)
+		} else {
+			a = analyzer
+		}
+		ret = append(ret, a.Analyze(ctx, obj))
+	}
+	return ret
 }
 
 func (e *Evaluator) updateCache(obj *status.Object) bool {
