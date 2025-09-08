@@ -1,7 +1,6 @@
 package analyze_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -15,10 +14,9 @@ import (
 func TestServiceAnalyzer(t *testing.T) {
 	var os status.ObjectStatus
 	p := print.NewTreePrinter(print.PrintOptions{ShowOk: true})
-	ctx := context.Background()
 	e, _, objs := test.TestEvaluator("services.yaml", "pods.yaml")
 
-	os = e.Eval(ctx, objs[0])
+	os = e.Eval(t.Context(), objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 
@@ -37,7 +35,7 @@ Ok default/Service/s1
                  Running=True                    24h
 `, sb.String())
 
-	os = e.Eval(ctx, objs[1])
+	os = e.Eval(t.Context(), objs[1])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 

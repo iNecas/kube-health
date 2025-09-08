@@ -25,13 +25,18 @@ var (
 		{Kind: "EndpointSlice", Group: "discovery.k8s.io"},
 		{Kind: "Service", Group: ""},
 		{Kind: "ControllerRevision", Group: "apps"},
+		{Kind: "ClusterRole", Group: "rbac.authorization.k8s.io"},
+		{Kind: "ClusterRoleBinding", Group: "rbac.authorization.k8s.io"},
+		{Kind: "ClusterRole", Group: "authorization.openshift.io"},
+		{Kind: "ClusterRoleBinding", Group: "authorization.openshift.io"},
+		{Kind: "Project", Group: "project.openshift.io"},
 	}
 
 	// CommonConditionsAnalyzer is a generic condition analyzer that can be used
 	// for any condition type. It's one of the default analyzers.
 	CommonConditionsAnalyzer = GenericConditionAnalyzer{
 		Conditions: NewStringMatchers("Ready"),
-		ReversedPolarityConditions: append(NewRegexpMatchers("Degraded", "Pressure", "Detected"),
+		ReversedPolarityConditions: append(NewRegexpMatchers("Degraded", "Pressure", "Detected", "Terminating"),
 			NewStringMatchers("Progressing")...),
 		ProgressingConditions: NewStringMatchers("Progressing"),
 		WarningConditions:     NewRegexpMatchers("Pressure", "Detected"),
