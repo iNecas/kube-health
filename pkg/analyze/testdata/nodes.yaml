@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: Node
+    metadata:
+      name: unschedulable-test-node
+      uid: 2d1efe7b-52aa-40a9-a93c-c5dbd25f85ac
+    spec:
+      unschedulable: true
+    status:
+      conditions:
+      - message: kubelet has sufficient memory available
+        reason: KubeletHasSufficientMemory
+        status: "False"
+        type: MemoryPressure
+      - message: kubelet has no disk pressure
+        reason: KubeletHasNoDiskPressure
+        status: "False"
+        type: DiskPressure
+      - message: kubelet has sufficient PID available
+        reason: KubeletHasSufficientPID
+        status: "False"
+        type: PIDPressure
+      - message: 'test error message'
+        reason: KubeletNotReady
+        status: "False"
+        type: Ready
+      - message: The cloud provider has marked this instance for termination
+        reason: TerminationRequested
+        status: "True"
+        type: Terminating
+  - apiVersion: v1
+    kind: Node
+    metadata:
+      name: healthy-test-node
+      uid: 3d1efe7b-52aa-40a9-a93c-c5dbd25f85ac
+    spec:
+    status:
+      conditions:
+      - message: kubelet has sufficient memory available
+        reason: KubeletHasSufficientMemory
+        status: "False"
+        type: MemoryPressure
+      - message: kubelet has no disk pressure
+        reason: KubeletHasNoDiskPressure
+        status: "False"
+        type: DiskPressure
+      - message: kubelet has sufficient PID available
+        reason: KubeletHasSufficientPID
+        status: "False"
+        type: PIDPressure
+      - message: ''
+        reason: KubeletReady
+        status: "True"
+        type: Ready

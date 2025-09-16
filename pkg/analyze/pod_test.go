@@ -1,7 +1,6 @@
 package analyze_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/inecas/kube-health/pkg/status"
@@ -12,15 +11,14 @@ import (
 
 func TestPodAnalyzer(t *testing.T) {
 	var os status.ObjectStatus
-	ctx := context.Background()
 	e, l, objs := test.TestEvaluator("pods.yaml")
 
-	os = e.Eval(ctx, objs[0])
+	os = e.Eval(t.Context(), objs[0])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Ok)
 
 	l.RegisterPodLogs("default", "p2", "p2c", "Line 1\nLine 2\nLine 3\n")
-	os = e.Eval(ctx, objs[1])
+	os = e.Eval(t.Context(), objs[1])
 	assert.False(t, os.Status().Progressing)
 	assert.Equal(t, os.Status().Result, status.Error)
 

@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"context"
 	"testing"
 
 	"github.com/inecas/kube-health/pkg/status"
@@ -387,7 +386,7 @@ func TestLoadResource(t *testing.T) {
 				resources: allTestResources,
 			}
 			rl := RealLoader{client: c}
-			statusObjects, err := rl.LoadResource(context.Background(),
+			statusObjects, err := rl.LoadResource(t.Context(),
 				tt.testResource.gr, tt.testResource.namespace, tt.testResource.name)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatusObject, statusObjects)
@@ -475,7 +474,7 @@ func TestLoadResourceBySelector(t *testing.T) {
 				resources: allTestResources,
 			}
 			rl := RealLoader{client: c}
-			statusObjects, err := rl.LoadResourceBySelector(context.Background(),
+			statusObjects, err := rl.LoadResourceBySelector(t.Context(),
 				tt.testResource.gr, tt.testResource.namespace, tt.testResource.label)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatusObject, statusObjects)
