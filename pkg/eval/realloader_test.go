@@ -264,9 +264,8 @@ func TestLoadResource(t *testing.T) {
 							"apiVersion": "v1",
 							"kind":       "Pod",
 							"metadata": map[string]interface{}{
-								"name":              test1Name,
-								"namespace":         testNS,
-								"creationTimestamp": nil,
+								"name":      test1Name,
+								"namespace": testNS,
 							},
 							"spec": map[string]interface{}{
 								"containers": nil,
@@ -306,9 +305,8 @@ func TestLoadResource(t *testing.T) {
 					Unstructured: &unstructured.Unstructured{
 						Object: map[string]interface{}{
 							"metadata": map[string]interface{}{
-								"name":              test1Name,
-								"namespace":         testNS,
-								"creationTimestamp": nil,
+								"name":      test1Name,
+								"namespace": testNS,
 							},
 							"spec": map[string]interface{}{
 								"containers": nil,
@@ -325,9 +323,8 @@ func TestLoadResource(t *testing.T) {
 					Unstructured: &unstructured.Unstructured{
 						Object: map[string]interface{}{
 							"metadata": map[string]interface{}{
-								"name":              "test-2",
-								"namespace":         testNS,
-								"creationTimestamp": nil,
+								"name":      "test-2",
+								"namespace": testNS,
 							},
 							"spec": map[string]interface{}{
 								"containers": nil,
@@ -450,9 +447,8 @@ func TestLoadResourceBySelector(t *testing.T) {
 					Unstructured: &unstructured.Unstructured{
 						Object: map[string]interface{}{
 							"metadata": map[string]interface{}{
-								"name":              test1Name,
-								"namespace":         testNS,
-								"creationTimestamp": nil,
+								"name":      test1Name,
+								"namespace": testNS,
 								"labels": map[string]interface{}{
 									"test-label": "foo",
 								},
