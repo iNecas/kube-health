@@ -59,8 +59,13 @@ There are multiple waiting strategies implemented:
 
 - `--wait-progress|-W` - wait while there is are some objects still progressing
 (regardless of the final result).
-- `--wait-ready|-R` - wait until all the objects are in OK state
+- `--wait-ok|-O` - wait until all the objects are in OK state
 - `--wait-forever|-F` - continuously poll for the status regardless of the results.
+
+For named resources, `-W` and `-O` also wait for a missing resource to
+be created before checking its health. F Use `--ignore-not-found` to
+skip missing named resources instead, including when a waiting flag is
+set.
 
 ### Exit codes
 
@@ -147,6 +152,17 @@ These projects played an important role during the development of kube-health:
 - [tohjustin/kube-lineage](https://github.com/tohjustin/kube-lineage)
 - [ahmetb/kubectl-cond](https://github.com/ahmetb/kubectl-cond)
 - [bergerx/kubectl-status](https://github.com/bergerx/kubectl-status)
+
+## Live-cluster smoke test
+
+With a disposable Kubernetes cluster selected as your current `kubectl` context, run
+`./tests/e2e.sh`. The script requires `kubectl`, `go`, GNU `timeout` and GNU
+`tail`; it creates a temporary namespace, starts `go run ./main.go --wait-ok`
+for a named Deployment (alongside a ConfigMap list) and Pod before either
+exists, verifies both waiters report `Unknown`, then creates the resources and
+checks that both waiters exit healthy. The waiters' output is
+streamed to the terminal and retained for assertions. It deletes the namespace on exit.
+This test is manual and is not part of `go test ./...` or CI.
 
 ## Developer Docs
 

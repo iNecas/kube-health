@@ -152,7 +152,7 @@ func (e *Evaluator) Eval(ctx context.Context, obj *status.Object) status.ObjectS
 		if err != nil {
 			return status.UnknownStatusWithError(obj, err)
 		}
-		e.updateCache(obj)
+		e.updateCache(updatedObj)
 	}
 
 	return analyzer.Analyze(ctx, updatedObj)

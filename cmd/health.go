@@ -11,6 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -60,15 +62,16 @@ func execName() string {
 }
 
 type flags struct {
-	waitForever  bool
-	waitProgress bool
-	waitOk       bool
-	showGroup    bool
-	showOk       bool
-	printVersion bool
-	width        int
-	configFlags  *genericclioptions.ConfigFlags
-	printFlags   *genericclioptions.PrintFlags
+	waitForever    bool
+	waitProgress   bool
+	waitOk         bool
+	ignoreNotFound bool
+	showGroup      bool
+	showOk         bool
+	printVersion   bool
+	width          int
+	configFlags    *genericclioptions.ConfigFlags
+	printFlags     *genericclioptions.PrintFlags
 }
 
 func newFlags() *flags {
@@ -90,6 +93,8 @@ func (f *flags) addFlags(cmd *cobra.Command) {
 		"Wait until the resources are ready (success only)")
 	fs.BoolVarP(&f.waitForever, "wait-forever", "F", false,
 		"Wait forever")
+	fs.BoolVar(&f.ignoreNotFound, "ignore-not-found", false,
+		"Skip named resources that do not exist")
 	fs.BoolVarP(&f.showGroup, "show-group", "G", false,
 		"For each object, show API group it belongs to")
 	fs.BoolVarP(&f.showOk, "show-healthy", "H", false,
@@ -176,35 +181,10 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		resources := make([]*resource.Info, 0)
-		objects := make([]*status.Object, 0)
-
-		resource.NewBuilder(fl.configFlags).
-			Unstructured().
-			NamespaceParam(namespace).DefaultNamespace().
-			ResourceTypeOrNameArgs(true, posArgs...).
-			FilenameParam(explicitNamespace, filenameOpts).
-			Flatten().
-			ContinueOnError().
-			Do().
-			Visit(func(info *resource.Info, err error) error {
-				if err != nil {
-					return err
-				}
-				resources = append(resources, info)
-
-				unst, ok := info.Object.(*unstructured.Unstructured)
-				if !ok {
-					return fmt.Errorf("expected *unstructured.Unstructured, got %T", info.Object)
-				}
-
-				obj, err := status.NewObjectFromUnstructured(unst)
-				if err != nil {
-					return err
-				}
-				objects = append(objects, obj)
-				return nil
-			})
+		objects, err := selectObjects(fl, posArgs, filenameOpts, namespace, explicitNamespace)
+		if err != nil {
+			return err
+		}
 
 		ctx := cmd.Context()
 		ctx, cancelFunc := context.WithCancel(ctx)
@@ -235,6 +215,93 @@ func runFunc(fl *flags) func(cmd *cobra.Command, args []string) error {
 
 		return nil
 	}
+}
+
+// resourceRequests splits CLI arguments into independent lookups. "pod a b"
+// becomes [pod, a], [pod, b]; "pod/a configmap" becomes [pod, a], [configmap].
+// Malformed type/name arguments are left intact for the resource builder to reject.
+func resourceRequests(args []string) [][]string {
+	if len(args) == 0 {
+		return [][]string{{}} // file or stdin input
+	}
+	if len(args) > 1 && !strings.Contains(strings.Join(args, " "), "/") {
+		requests := make([][]string, 0, len(args)-1)
+		for _, name := range args[1:] {
+			requests = append(requests, []string{args[0], name})
+		}
+		return requests
+	}
+	requests := make([][]string, 0, len(args))
+	for _, arg := range args {
+		parts := strings.Split(arg, "/")
+		if len(parts) > 2 || len(parts) == 2 && (parts[0] == "" || parts[1] == "") {
+			parts = []string{arg} // keep malformed input for the builder to reject
+		}
+		requests = append(requests, parts)
+	}
+	return requests
+}
+
+// selectObjects resolves CLI arguments or input files to Kubernetes objects.
+// Named requests are resolved separately so a missing object can be skipped with
+// --ignore-not-found or represented by a placeholder when waiting. Bare resource
+// types are list queries: an empty list does not wait for future objects.
+func selectObjects(fl *flags, args []string, filenames *resource.FilenameOptions, namespace string, explicitNamespace bool) ([]*status.Object, error) {
+	var objects []*status.Object
+	for _, request := range resourceRequests(args) {
+		result := resource.NewBuilder(fl.configFlags).
+			Unstructured().
+			NamespaceParam(namespace).DefaultNamespace().
+			ResourceTypeOrNameArgs(true, request...).
+			FilenameParam(explicitNamespace, filenames).
+			Flatten().Do()
+		err := result.Visit(func(info *resource.Info, err error) error {
+			if err != nil {
+				return err
+			}
+			unst, ok := info.Object.(*unstructured.Unstructured)
+			if !ok {
+				return fmt.Errorf("expected *unstructured.Unstructured, got %T", info.Object)
+			}
+			obj, err := status.NewObjectFromUnstructured(unst)
+			if err == nil {
+				objects = append(objects, obj)
+			}
+			return err
+		})
+		if err == nil {
+			continue
+		}
+		if len(request) != 2 || !apierrors.IsNotFound(err) {
+			return nil, err
+		}
+		if fl.ignoreNotFound {
+			continue
+		}
+		if !fl.waitProgress && !fl.waitOk && !fl.waitForever {
+			return nil, err
+		}
+		mapping, mapErr := result.ResourceMapping()
+		if mapErr != nil {
+			return nil, mapErr
+		}
+		ns := namespace
+		if mapping.Scope.Name() != meta.RESTScopeNameNamespace {
+			ns = ""
+		}
+		// A minimal object carries the kind and name needed for the poller's
+		// GET; it is replaced by the real object as soon as it exists.
+		placeholder := &unstructured.Unstructured{}
+		placeholder.SetGroupVersionKind(mapping.GroupVersionKind)
+		placeholder.SetNamespace(ns)
+		placeholder.SetName(request[1])
+		obj, err := status.NewObjectFromUnstructured(placeholder)
+		if err != nil {
+			return nil, err
+		}
+		objects = append(objects, obj)
+	}
+	return objects, nil
 }
 
 // waitFunction decides when to stop waiting for the resources.
